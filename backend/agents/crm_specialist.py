@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 from backend.tools.crm_tools import (
     ALL_CRM_TOOLS,
     list_companies, list_contacts, list_deals, get_pipeline_summary,
-    predict_churn, predict_deal_win,
+    predict_churn, predict_deal_win, get_at_risk_clients,
 )
 from backend.agents.tool_interceptor import safe_agent_run, _FORMATTERS
 from backend.rag.retriever import ERPRetriever
@@ -128,6 +128,9 @@ _LIST_INTENTS = [
     "liste des deals", "afficher les deals", "tous les deals",
     # Pipeline
     "pipeline", "pipeline summary", "show pipeline",
+    # At-risk / churn signal queries
+    "at risk clients", "at-risk clients", "churn signals",
+    "clients at risk", "clients with churn", "which clients have churn",
 ]
 
 
@@ -169,6 +172,13 @@ _LIST_TOOL_MAP = [
     ("complete list",          list_companies,        {},                     "list_companies"),
     # Pipeline — structured prose, no formatter
     ("pipeline",               get_pipeline_summary,  {},                     None),
+    # At-risk clients — ordered most-specific first
+    ("which clients have churn", get_at_risk_clients, {},                     None),
+    ("clients with churn",       get_at_risk_clients, {},                     None),
+    ("clients at risk",          get_at_risk_clients, {},                     None),
+    ("churn signals",            get_at_risk_clients, {},                     None),
+    ("at-risk clients",          get_at_risk_clients, {},                     None),
+    ("at risk clients",          get_at_risk_clients, {},                     None),
 ]
 
 
