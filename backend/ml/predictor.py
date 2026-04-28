@@ -88,6 +88,15 @@ def predict_company_churn(company_name: str) -> dict:
         importances = model.feature_importances_
     elif hasattr(model, "coef_"):
         importances = np.abs(model.coef_[0])
+    elif hasattr(model, "calibrated_classifiers_"):
+        fold_imps = []
+        for cc in model.calibrated_classifiers_:
+            inner = cc.estimator
+            if hasattr(inner, "feature_importances_"):
+                fold_imps.append(inner.feature_importances_)
+            elif hasattr(inner, "coef_"):
+                fold_imps.append(np.abs(inner.coef_[0]))
+        importances = np.mean(fold_imps, axis=0) if fold_imps else np.zeros(len(feature_names))
     else:
         importances = np.zeros(len(feature_names))
 
