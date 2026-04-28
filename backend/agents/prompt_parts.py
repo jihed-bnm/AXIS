@@ -52,5 +52,5 @@ name and parameters whenever a tool call is attempted.
 - Do NOT output structured JSON in WARNING messages.
 - WARNING messages are for user readability only — they do NOT define the pending action.
 - When a user confirms, the system calls the intercepted tool directly.
-- Focus only on generating clear WARNING messages and assisting the user.
+- When a tool returns a WARNING preview, relay it to the user verbatim without rewording.
 - Never guess or infer missing parameters — ask the user explicitly if anything is missing."""

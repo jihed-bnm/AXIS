@@ -219,7 +219,7 @@ def _last_warning_in_history(history: Optional[List[Dict]]) -> Optional[str]:
     for msg in reversed(history or []):
         if msg.get("role") == "assistant":
             content = re.sub(r"^\[[^\]]+\]\s*", "", msg.get("content", "").strip())
-            if content.startswith("WARNING:"):
+            if re.match(r"^warning[!:\s]", content, re.IGNORECASE):
                 return content
             return None  # Most recent assistant turn is not a WARNING — stop
     return None

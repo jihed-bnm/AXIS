@@ -248,6 +248,7 @@ def _find_tool(name: str, tools: List[BaseTool]) -> BaseTool | None:
 # ── Pending-action capture ────────────────────────────────────────────────────
 
 _WARNING_PATTERNS = ("WARNING:", "about to CREATE", "about to UPDATE", "about to DELETE")
+_WARNING_OUTPUT_RE = re.compile(r'^warning[!:\s]', re.IGNORECASE)
 
 
 def _try_capture_pending_action(step: Any) -> None:
@@ -390,6 +391,31 @@ def safe_agent_run(
                 if last_tool_name and last_tool_name in _FORMATTERS:
                     logger.info(f"[Interceptor] Formatting list output for tool '{last_tool_name}'")
                     return _FORMATTERS[last_tool_name](tool_output_str)
+        # LLM hallucinated a WARNING without calling any tool — force a retry.
+        if _WARNING_OUTPUT_RE.match(output) and not steps:
+            logger.warning("[Interceptor] LLM hallucinated WARNING without tool call — re-invoking with explicit directive.")
+            forced_message = (
+                f"CRITICAL: You MUST call the appropriate tool to handle this request. "
+                f"Do NOT describe the action in text — invoke the tool function directly with confirmed=False. "
+                f"Original request: {message}"
+            )
+            try:
+                retry_result = agent.invoke({"input": forced_message, "chat_history": history})
+                retry_output = retry_result.get("output", "").strip()
+                retry_steps = retry_result.get("intermediate_steps", [])
+                if retry_steps:
+                    last_step = retry_steps[-1]
+                    tool_output_str = str(last_step[1] if isinstance(last_step, (list, tuple)) and len(last_step) >= 2 else last_step)
+                    if any(p in tool_output_str for p in _WARNING_PATTERNS):
+                        _try_capture_pending_action(last_step)
+                        return tool_output_str
+                    return tool_output_str
+                # Re-invocation also failed — strip prefix and return body
+                cleaned = re.sub(r'^warning[!:]\s*', '', output, flags=re.IGNORECASE).lstrip()
+                return cleaned or "I could not complete that action. Please try again with more specific phrasing."
+            except Exception as e:
+                logger.error(f"[Interceptor] Re-invocation failed: {e}", exc_info=True)
+                return "I could not complete that action. Please try again."
         return output  # Normal text response
 
     tool_name: str = tool_call["name"]
