@@ -248,7 +248,12 @@ def _find_tool(name: str, tools: List[BaseTool]) -> BaseTool | None:
 # ── Pending-action capture ────────────────────────────────────────────────────
 
 _WARNING_PATTERNS = ("WARNING:", "about to CREATE", "about to UPDATE", "about to DELETE")
-_WARNING_OUTPUT_RE = re.compile(r'^warning[!:\s]', re.IGNORECASE)
+_HALLUCINATED_CONFIRM_RE = re.compile(
+    r'^\s*(?:warning[!:]|i\s+am\s+about\s+to)\b'
+    r'|do\s+you\s+want\s+to\s+proceed'
+    r'|please\s+confirm\s+with',
+    re.IGNORECASE,
+)
 
 
 def _try_capture_pending_action(step: Any) -> None:
@@ -392,8 +397,8 @@ def safe_agent_run(
                     logger.info(f"[Interceptor] Formatting list output for tool '{last_tool_name}'")
                     return _FORMATTERS[last_tool_name](tool_output_str)
         # LLM hallucinated a WARNING without calling any tool — force a retry.
-        if _WARNING_OUTPUT_RE.match(output) and not steps:
-            logger.warning("[Interceptor] LLM hallucinated WARNING without tool call — re-invoking with explicit directive.")
+        if _HALLUCINATED_CONFIRM_RE.search(output) and not steps:
+            logger.warning("[Interceptor] LLM hallucinated confirmation prompt without tool call — re-invoking with explicit directive.")
             forced_message = (
                 f"CRITICAL: You MUST call the appropriate tool to handle this request. "
                 f"Do NOT describe the action in text — invoke the tool function directly with confirmed=False. "

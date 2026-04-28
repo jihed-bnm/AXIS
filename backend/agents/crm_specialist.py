@@ -128,12 +128,6 @@ _LIST_INTENTS = [
     "liste des deals", "afficher les deals", "tous les deals",
     # Pipeline
     "pipeline", "pipeline summary", "show pipeline",
-    # Detail lookups (bypass RAG)
-    "show me company", "show me client", "show me contact",
-    "find company", "find client", "find contact",
-    "get company", "get client", "get contact",
-    "show company", "show client", "show contact",
-    "details of", "info on", "information on",
 ]
 
 
