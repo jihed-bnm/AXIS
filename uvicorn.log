@@ -1,0 +1,193 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Jihed\\Desktop\\pfe\\erp-ai-agent']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [13676] using WatchFiles
+2026-04-28 16:00:38 [WARNING] passlib.handlers.bcrypt: (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\Jihed\Desktop\pfe\erp-ai-agent\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-28 16:00:39 [INFO] backend.main: database tables ready
+WARNING:  WatchFiles detected changes in 'backend\agents\crm_specialist.py'. Reloading...
+INFO:     127.0.0.1:58999 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58918 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50483 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/crm/kpis HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/crm/win-rate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/crm/pipeline-stage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56941 - "GET /api/crm/revenue-trend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/crm/top-clients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/crm/deal-size HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56941 - "GET /api/crm/new-vs-closed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56941 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/charts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/etl/status HTTP/1.1" 200 OK
+2026-04-28 16:07:35 [INFO] erp_agent: [Supervisor] Fast-routed to: CRM
+2026-04-28 16:07:36 [INFO] backend.agents.crm_specialist: [Tool] list_companies | args={} | out='Showing first 50 of 359 results.\nFound 50 companies:\n  [2] Tunisair | Technology | Sfax | Status: client\n  [3] UIB | Technology | Sfax | Status: client\n  [4] STE Khalfallah & Fils | IT | Ben Arous | S' | 15.0ms
+INFO:     127.0.0.1:50483 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50483 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51713 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/activity/feed HTTP/1.1" 200 OK
+2026-04-28 16:08:06 [INFO] erp_agent: [Supervisor] Fast-routed to: CRM
+2026-04-28 16:08:13 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-28 16:08:46 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-28 16:08:46 [INFO] erp_agent: [Interceptor] Formatting list output for tool 'list_contacts'
+
+
+[1m> Entering new AgentExecutor chain...[0m
+[32;1m[1;3m
+Invoking: `list_contacts` with `{'company_name': 'BNA BANK'}`
+
+
+[0m[36;1m[1;3mShowing first 50 of 93 results.
+Found 50 contacts:
+  [9] Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn
+  [4124] Demo User | None | BNA BANK | None
+  [169] Mehdi Rekik | None | BNA BANK | m.rekik@bnabank.tn
+  [174] Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn
+  [1176] Leila Ben Romdhane | None | BNA BANK | l.benromdhane@bnabank.tn
+  [1193] Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn
+  [1261] Dorra Khalfallah | None | BNA BANK | d.khalfallah@bnabank.tn
+  [1292] Amine Oueslati | None | BNA BANK | a.oueslati@bnabank.tn
+  [1366] Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn
+  [1436] Yasmine Hamdi | None | BNA BANK | y.hamdi@bnabank.tn
+  [1439] Olfa Belhadj | None | BNA BANK | o.belhadj@bnabank.tn
+  [1882] Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn
+  [2438] Yasmine Hamdi | None | BNA BANK | y.hamdi@bnabank.tn
+  [2719] Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn
+  [2768] Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn
+  [2877] Dorra Khalfallah | None | BNA BANK | d.khalfallah@bnabank.tn
+  [3087] Nadia Bouzid | None | BNA BANK | None
+  [3124] Bilel Jlassi | None | BNA BANK | b.jlassi@bnabank.tn
+  [3220] Hajer Trabelsi | None | BNA BANK | h.trabelsi@bnabank.tn
+  [1321] Leila Ben Romdhane | None | BNA BANK | l.benromdhane@bnabank.tn
+  [22] Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn
+  [3795] Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn
+  [3705] Bilel Jlassi | None | BNA BANK | b.jlassi@bnabank.tn
+  [3574] Nadia Bouzid | None | BNA BANK | None
+  [3389] Hajer Trabelsi | None | BNA BANK | h.trabelsi@bnabank.tn
+  [2750] Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn
+  [2692] Olfa Belhadj | None | BNA BANK | o.belhadj@bnabank.tn
+  [2319] Yasmine Hamdi | None | BNA BANK | y.hamdi@bnabank.tn
+  [2102] Dorra Khalfallah | None | BNA BANK | d.khalfallah@bnabank.tn
+  [623] Mehdi Rekik | None | BNA BANK | m.rekik@bnabank.tn
+  [3742] Nadia Bouzid | None | BNA BANK | None
+  [2636] Amine Oueslati | None | BNA BANK | a.oueslati@bnabank.tn
+  [1968] Olfa Belhadj | None | BNA BANK | o.belhadj@bnabank.tn
+  [632] Mehdi Rekik | None | BNA BANK | m.rekik@bnabank.tn
+  [2665] Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn
+  [953] Mehdi Rekik | None | BNA BANK | m.rekik@bnabank.tn
+  [639] Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn
+  [3855] Hajer Trabelsi | None | BNA BANK | h.trabelsi@bnabank.tn
+  [3488] Nadia Bouzid | None | BNA BANK | None
+  [3052] Yasmine Hamdi | None | BNA BANK | y.hamdi@bnabank.tn
+  [2681] Olfa Belhadj | None | BNA BANK | o.belhadj@bnabank.tn
+  [2519] Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn
+  [2136] Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn
+  [770] Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn
+  [3799] Hajer Trabelsi | None | BNA BANK | h.trabelsi@bnabank.tn
+  [3717] Nadia Bouzid | None | BNA BANK | None
+  [3016] Leila Ben Romdhane | None | BNA BANK | l.benromdhane@bnabank.tn
+  [2435] Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn
+  [2375] Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn
+  [1805] Amine Oueslati | None | BNA BANK | a.oueslati@bnabank.tn[0m[32;1m[1;3mHere are the contacts for BNA Bank:
+
+9 | Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn  
+4124 | Demo User | None | BNA BANK | None  
+169 | Mehdi Rekik | None | BNA BANK | m.rekik@bnabank.tn  
+174 | Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn  
+1176 | Leila Ben Romdhane | None | BNA BANK | l.benromdhane@bnabank.tn  
+1193 | Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn  
+1261 | Dorra Khalfallah | None | BNA BANK | d.khalfallah@bnabank.tn  
+1292 | Amine Oueslati | None | BNA BANK | a.oueslati@bnabank.tn  
+1366 | Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn  
+1436 | Yasmine Hamdi | None | BNA BANK | y.hamdi@bnabank.tn  
+1439 | Olfa Belhadj | None | BNA BANK | o.belhadj@bnabank.tn  
+1882 | Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn  
+2438 | Yasmine Hamdi | None | BNA BANK | y.hamdi@bnabank.tn  
+2719 | Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn  
+2768 | Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn  
+2877 | Dorra Khalfallah | None | BNA BANK | d.khalfallah@bnabank.tn  
+3087 | Nadia Bouzid | None | BNA BANK | None  
+3124 | Bilel Jlassi | None | BNA BANK | b.jlassi@bnabank.tn  
+3220 | Hajer Trabelsi | None | BNA BANK | h.trabelsi@bnabank.tn  
+1321 | Leila Ben Romdhane | None | BNA BANK | l.benromdhane@bnabank.tn  
+22 | Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn  
+3795 | Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn  
+3705 | Bilel Jlassi | None | BNA BANK | b.jlassi@bnabank.tn  
+3574 | Nadia Bouzid | None | BNA BANK | None  
+3389 | Hajer Trabelsi | None | BNA BANK | h.trabelsi@bnabank.tn  
+2750 | Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn  
+2692 | Olfa Belhadj | None | BNA BANK | o.belhadj@bnabank.tn  
+2319 | Yasmine Hamdi | None | BNA BANK | y.hamdi@bnabank.tn  
+2102 | Dorra Khalfallah | None | BNA BANK | d.khalfallah@bnabank.tn  
+623 | Mehdi Rekik | None | BNA BANK | m.rekik@bnabank.tn  
+3742 | Nadia Bouzid | None | BNA BANK | None  
+2636 | Amine Oueslati | None | BNA BANK | a.oueslati@bnabank.tn  
+1968 | Olfa Belhadj | None | BNA BANK | o.belhadj@bnabank.tn  
+632 | Mehdi Rekik | None | BNA BANK | m.rekik@bnabank.tn  
+2665 | Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn  
+953 | Mehdi Rekik | None | BNA BANK | m.rekik@bnabank.tn  
+639 | Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn  
+3855 | Hajer Trabelsi | None | BNA BANK | h.trabelsi@bnabank.tn  
+3488 | Nadia Bouzid | None | BNA BANK | None  
+3052 | Yasmine Hamdi | None | BNA BANK | y.hamdi@bnabank.tn  
+2681 | Olfa Belhadj | None | BNA BANK | o.belhadj@bnabank.tn  
+2519 | Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn  
+2136 | Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn  
+770 | Maryem Ferchiou | None | BNA BANK | m.ferchiou@bnabank.tn  
+3799 | Hajer Trabelsi | None | BNA BANK | h.trabelsi@bnabank.tn  
+3717 | Nadia Bouzid | None | BNA BANK | None  
+3016 | Leila Ben Romdhane | None | BNA BANK | l.benromdhane@bnabank.tn  
+2435 | Lotfi Ben Salah | None | BNA BANK | l.bensalah@bnabank.tn  
+2375 | Yassine Trabelsi | None | BNA BANK | y.trabelsi@bnabank.tn  
+1805 | Amine Oueslati | None | BNA BANK | a.oueslati@bnabank.tn  
+
+Would you like to see more details on any specific contact or perform an action on these contacts?[0m
+
+[1m> Finished chain.[0m
+INFO:     127.0.0.1:64122 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61999 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62408 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61597 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58058 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51968 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62408 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61597 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61999 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58058 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51968 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62408 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62408 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51968 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62408 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51968 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62408 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64122 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51968 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51968 - "GET /api/etl/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51968 - "GET /api/activity/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51968 - "GET /api/etl/status HTTP/1.1" 200 OK
+2026-04-28 16:08:54 [INFO] erp_agent: [Supervisor] Fast-routed to: CRM

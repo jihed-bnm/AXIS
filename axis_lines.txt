@@ -1,0 +1,1261 @@
+1:<!DOCTYPE html>
+2:<html lang="en">
+3:<head>
+4:<meta charset="UTF-8">
+5:<meta name="viewport" content="width=device-width, initial-scale=1.0">
+6:<title>AXIS — Agentic eXecution &amp; Intelligence System</title>
+7:<link rel="preconnect" href="https://fonts.googleapis.com">
+8:<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+9:<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+10:<style>
+11:/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+12:*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+13:html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;font-family:'Inter',sans-serif;color:#F0F0F0;font-size:14px}
+14:button{cursor:pointer;border:none;outline:none;font-family:'Inter',sans-serif}
+15:input{outline:none;font-family:'Inter',sans-serif}
+16:::-webkit-scrollbar{width:4px;height:4px}
+17:::-webkit-scrollbar-track{background:#111111}
+18:::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+20:/* ── Keyframes ────────────────────────────────────────────────────────────── */
+21:@keyframes axisGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(108,99,255,.4))}50%{filter:drop-shadow(0 0 24px rgba(108,99,255,.9))}}
+22:@keyframes fadeOut{to{opacity:0;pointer-events:none}}
+23:@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+24:@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+25:@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+26:@keyframes spin{to{transform:rotate(360deg)}}
+27:@keyframes pulse-opacity{0%,100%{opacity:1}50%{opacity:0.3}}
+29:/* ── Splash ───────────────────────────────────────────────────────────────── */
+30:#splash{position:fixed;inset:0;z-index:1000;background:#0A0A0A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+31:#splash .logo-wrap{animation:axisGlow 2s ease-in-out infinite}
+32:#splash .axis-name{font-size:28px;font-weight:600;letter-spacing:.3em;color:#F0F0F0}
+33:#splash .axis-sub{font-size:13px;font-weight:300;color:#666666;letter-spacing:.05em}
+34:#splash.fade-out{animation:fadeOut .6s ease forwards}
+36:/* ── Login ────────────────────────────────────────────────────────────────── */
+37:#login-screen{position:fixed;inset:0;z-index:900;background:#0A0A0A;display:none;align-items:center;justify-content:center;animation:fadeIn .5s ease}
+38:.login-card{background:#111111;border:1px solid #1E1E1E;border-radius:16px;padding:48px;width:380px;display:flex;flex-direction:column;align-items:center;gap:28px;box-shadow:0 0 40px rgba(0,0,0,.6)}
+39:.login-logo{display:flex;flex-direction:column;align-items:center;gap:12px}
+40:.login-logo .axis-name{font-size:20px;font-weight:600;letter-spacing:.3em;color:#F0F0F0}
+41:.login-heading{font-size:22px;font-weight:600;color:#F0F0F0;text-align:center}
+42:.login-fields{width:100%;display:flex;flex-direction:column;gap:14px}
+43:.login-fields input{width:100%;background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;padding:12px 14px;color:#F0F0F0;font-size:14px;transition:border-color .2s ease}
+44:.login-fields input:focus{border-color:#6C63FF}
+45:.login-fields input::placeholder{color:#666666}
+46:.login-btn{width:100%;background:#6C63FF;color:#F0F0F0;font-size:14px;font-weight:600;padding:13px;border-radius:8px;transition:filter .2s ease}
+47:.login-btn:hover{filter:brightness(1.15)}
+48:.login-error{color:#FF4D4D;font-size:13px;display:none}
+50:/* ── App Shell ────────────────────────────────────────────────────────────── */
+51:#app{display:none;width:100vw;height:100vh;flex-direction:row;overflow:hidden}
+53:/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+54:#sidebar{width:240px;flex-shrink:0;background:#111111;border-right:1px solid #1E1E1E;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+55:.sidebar-logo{display:flex;align-items:center;gap:10px;padding:24px 20px 20px;border-bottom:1px solid #1E1E1E}
+56:.sidebar-logo .axis-name{font-size:16px;font-weight:600;letter-spacing:.2em;color:#F0F0F0}
+57:.sidebar-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+58:.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:20px;color:#666666;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s ease;border-left:2px solid transparent}
+59:.nav-item:hover{color:#F0F0F0;background:#1A1A1A}
+60:.nav-item.active{color:#F0F0F0;background:#1A1A1A;border-left-color:#6C63FF}
+61:.nav-item svg{flex-shrink:0}
+62:.sidebar-footer{padding:16px 20px;border-top:1px solid #1E1E1E;display:flex;flex-direction:column;gap:10px}
+63:.user-info{display:flex;align-items:center;gap:8px}
+64:.user-dot{width:8px;height:8px;border-radius:50%;background:#3ECF8E;flex-shrink:0}
+65:.user-name{font-size:13px;color:#F0F0F0;font-weight:500}
+66:.logout-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#666666;font-size:12px;padding:8px;transition:all .2s ease}
+67:.logout-btn:hover{color:#FF4D4D;border-color:#FF4D4D}
+69:/* ── Main Wrapper ─────────────────────────────────────────────────────────── */
+70:#main-wrapper{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+71:#topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-bottom:1px solid #1E1E1E;flex-shrink:0;background:#0A0A0A}
+72:#page-title{font-size:15px;font-weight:600;color:#F0F0F0}
+73:.etl-controls{display:flex;align-items:center;gap:10px}
+74:#etl-trigger-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#F0F0F0;font-size:12px;font-weight:500;padding:7px 14px;transition:all .2s ease}
+75:#etl-trigger-btn:hover{border-color:#6C63FF;color:#6C63FF}
+76:.etl-indicator{display:flex;align-items:center;gap:6px}
+77:.etl-dot{width:8px;height:8px;border-radius:50%;background:#666666;transition:background .3s ease}
+78:.etl-dot.idle{background:#666666}
+79:.etl-dot.running{background:#00D4FF;animation:pulse .8s ease-in-out infinite}
+80:.etl-dot.success{background:#3ECF8E}
+81:.etl-dot.failed{background:#FF4D4D}
+82:.etl-label{font-size:12px;color:#666666}
+83:#content-area{flex:1;overflow-y:auto;padding:24px;background:#0A0A0A}
+85:/* ── Right Panel (collapsible overlay) ───────────────────────────────────── */
+86:#right-panel{position:fixed;top:0;right:0;width:320px;height:100vh;background:#111111;border-left:1px solid #1E1E1E;display:flex;flex-direction:column;overflow:hidden;z-index:200;transform:translateX(100%);transition:transform .3s ease}
+87:#right-panel.open{transform:translateX(0)}
+88:#panel-toggle{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:201;width:32px;height:64px;background:#111111;border:1px solid #1E1E1E;border-right:none;border-left:3px solid #6C63FF;border-radius:8px 0 0 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:right .3s ease}
+89:#panel-toggle.open{right:320px}
+90:.panel-header{padding:16px 16px 12px;border-bottom:1px solid #1E1E1E;flex-shrink:0}
+91:.panel-title{font-size:13px;font-weight:600;color:#F0F0F0;letter-spacing:.03em}
+92:#activity-feed{flex:1;overflow-y:auto;padding:8px}
+93:.feed-empty{padding:24px 16px;text-align:center;color:#666666;font-size:13px}
+94:.feed-item{display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-radius:8px;transition:background .2s ease;animation:slideIn .3s ease}
+95:.feed-item:hover{background:#1A1A1A}
+96:.feed-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+97:.feed-dot.add{background:#3ECF8E}
+98:.feed-dot.update{background:#00D4FF}
+99:.feed-dot.delete{background:#FF4D4D}
+100:.feed-dot.etl{background:#6C63FF}
+101:.feed-content{flex:1;min-width:0}
+102:.feed-action{font-size:12px;font-weight:500;color:#F0F0F0;text-transform:capitalize}
+103:.feed-entity{font-size:11px;color:#666666;margin-top:1px}
+104:.feed-details{font-size:11px;color:#666666;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+105:.feed-time{font-size:10px;color:#444;flex-shrink:0;margin-top:2px}
+107:/* ── Dashboard Tabs ───────────────────────────────────────────────────────── */
+108:.tab-bar{display:flex;gap:0;border-bottom:1px solid #1E1E1E;margin-bottom:24px}
+109:.tab-btn{background:transparent;color:#666666;font-size:13px;font-weight:500;padding:10px 20px;border-bottom:2px solid transparent;transition:all .2s ease;font-family:'Inter',sans-serif}
+110:.tab-btn:hover{color:#F0F0F0}
+111:.tab-btn.active{color:#F0F0F0;border-bottom-color:#6C63FF}
+112:.tab-content{display:none}
+113:.tab-content.active{display:block}
+115:/* ── KPI Grid ─────────────────────────────────────────────────────────────── */
+116:.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:24px;margin-bottom:24px}
+117:.kpi-card{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;padding:20px 20px 16px;box-shadow:0 0 0 1px #1E1E1E;transition:all .2s ease}
+118:.kpi-card:hover{border-color:#2A2A2A}
+119:.kpi-label{font-size:11px;font-weight:500;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+120:.kpi-value{font-size:28px;font-weight:700;color:#F0F0F0;line-height:1;margin-bottom:4px}
+121:.kpi-sub{font-size:11px;color:#666666}
+122:.kpi-value.positive{color:#3ECF8E}
+123:.kpi-value.negative{color:#FF4D4D}
+125:/* ── Chart Layout ─────────────────────────────────────────────────────────── */
+126:.charts-section{display:flex;flex-direction:column;gap:24px}
+127:.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+128:.chart-card{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;padding:20px;box-shadow:0 0 0 1px #1E1E1E;min-height:380px}
+129:.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+130:.chart-title{font-size:12px;font-weight:600;color:#666666;text-transform:uppercase;letter-spacing:.06em}
+131:.chart-header .chart-title{margin-bottom:0}
+132:.fullscreen-btn{background:none;border:none;padding:4px 6px;cursor:pointer;opacity:0.4;transition:opacity .2s ease;border-radius:4px;display:flex;align-items:center}
+133:.fullscreen-btn:hover{opacity:1;background:#2A2A2A}
+134:.chart-card.fullscreen{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1000;background:#0A0A0A;border-radius:0;padding:24px;display:flex;flex-direction:column;overflow:hidden}
+135:.chart-card.fullscreen .chart-container{flex:1;height:auto!important}
+136:.chart-container{width:100%;height:320px}
+137:.chart-container.tall{height:360px}
+139:/* ── Agent Chat ──────────────────────────────────────────────────────────── */
+140:#view-agent{height:100%}
+141:.agent-layout{display:flex;height:100%;gap:0}
+142:.agent-chat{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #1E1E1E}
+143:.agent-chat-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #1E1E1E;flex-shrink:0}
+144:.agent-chat-title{font-size:14px;font-weight:600;color:#F0F0F0}
+145:.agent-clear-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:6px;color:#666;font-size:12px;padding:5px 12px;transition:all .2s ease}
+146:.agent-clear-btn:hover{border-color:#FF4D4D;color:#FF4D4D}
+147:.agent-messages{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+148:.msg-user{align-self:flex-end;max-width:70%}
+149:.msg-agent{align-self:flex-start;max-width:70%}
+150:.msg-bubble{padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.6;color:#F0F0F0}
+151:.msg-user .msg-bubble{background:#6C63FF;border-radius:12px 12px 2px 12px}
+152:.msg-agent .msg-bubble{background:#1A1A1A;border-radius:12px 12px 12px 2px}
+153:.msg-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-bottom:4px;display:inline-block;letter-spacing:.05em}
+154:.tag-sales{background:rgba(108,99,255,.2);color:#6C63FF}
+155:.tag-finance{background:rgba(62,207,142,.2);color:#3ECF8E}
+156:.tag-data{background:rgba(0,212,255,.2);color:#00D4FF}
+157:.tag-orchestrator{background:rgba(102,102,102,.2);color:#999}
+158:.typing-indicator{display:flex;align-items:center;gap:4px;padding:14px 16px;background:#1A1A1A;border-radius:12px 12px 12px 2px;width:fit-content}
+159:.typing-dot{width:6px;height:6px;border-radius:50%;background:#666;animation:typingBounce .8s ease infinite}
+160:.typing-dot:nth-child(2){animation-delay:.15s}
+161:.typing-dot:nth-child(3){animation-delay:.3s}
+162:@keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+163:.agent-input-area{padding:16px 20px;border-top:1px solid #1E1E1E;background:#111111;display:flex;gap:10px;flex-shrink:0}
+164:.agent-input{flex:1;background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;padding:10px 14px;color:#F0F0F0;font-size:13px;transition:border-color .2s ease}
+165:.agent-input:focus{border-color:#6C63FF}
+166:.agent-input::placeholder{color:#666}
+167:.agent-send-btn{background:#6C63FF;border-radius:8px;padding:10px 16px;display:flex;align-items:center;justify-content:center;transition:filter .2s ease;flex-shrink:0}
+168:.agent-send-btn:hover{filter:brightness(1.15)}
+169:.agent-panel-right{width:280px;flex-shrink:0;padding:20px;overflow-y:auto;background:#0A0A0A}
+170:.agent-panel-title{font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+171:.subagent-card{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;transition:border-color .3s ease}
+172:.subagent-card.active{border-color:#6C63FF}
+173:.subagent-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;transition:background .3s ease}
+174:.subagent-info{flex:1;min-width:0}
+175:.subagent-name{font-size:12px;font-weight:600;color:#F0F0F0;margin-bottom:2px}
+176:.subagent-role{font-size:11px;color:#666;line-height:1.4}
+177:.subagent-status{font-size:10px;margin-top:4px;font-weight:500}
+179:/* ── pulse-dot (kept for other uses) ─────────────────────────────────────── */
+180:.pulse-dot{animation:pulse-opacity 2s ease-in-out infinite}
+182:/* ── Activity View ────────────────────────────────────────────────────────── */
+183:#view-activity{display:none}
+184:.activity-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+185:.activity-title{font-size:16px;font-weight:600;color:#F0F0F0}
+186:.filter-bar{display:flex;gap:8px}
+187:.filter-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#666666;font-size:12px;font-weight:500;padding:6px 14px;transition:all .2s ease}
+188:.filter-btn:hover{color:#F0F0F0}
+189:.filter-btn.active{background:#6C63FF22;border-color:#6C63FF;color:#6C63FF}
+190:.activity-table-wrap{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;overflow:hidden}
+191:.activity-table{width:100%;border-collapse:collapse}
+192:.activity-table th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:#666666;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #1E1E1E;background:#111111}
+193:.activity-table td{padding:11px 16px;font-size:12px;color:#F0F0F0;border-bottom:1px solid #1E1E1E11}
+194:.activity-table tr:last-child td{border-bottom:none}
+195:.activity-table tr:hover td{background:#1E1E1E22}
+196:.status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+197:.status-badge.success{background:#3ECF8E22;color:#3ECF8E}
+198:.status-badge.error{background:#FF4D4D22;color:#FF4D4D}
+199:.act-type-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px}
+201:/* ── Loading spinner ─────────────────────────────────────────────────────── */
+202:.spinner{display:inline-block;width:16px;height:16px;border:2px solid #333;border-top-color:#6C63FF;border-radius:50%;animation:spin .7s linear infinite}
+204:/* ── Responsive tweaks ────────────────────────────────────────────────────── */
+205:@media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+206:@media(max-width:900px){.chart-row{grid-template-columns:1fr}}
+207:</style>
+208:</head>
+209:<body>
+211:<!-- ═══════════════════════════════════════════════════════════ SPLASH ══════ -->
+212:<div id="splash">
+213:  <div class="logo-wrap">
+214:    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+215:      <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(45 32 32)"/>
+216:      <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(-45 32 32)"/>
+217:    </svg>
+218:  </div>
+219:  <span class="axis-name">AXIS</span>
+220:  <span class="axis-sub">Agentic eXecution &amp; Intelligence System</span>
+221:</div>
+223:<!-- ═══════════════════════════════════════════════════════════ LOGIN ═══════ -->
+224:<div id="login-screen">
+225:  <div class="login-card">
+226:    <div class="login-logo">
+227:      <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+228:        <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(45 32 32)"/>
+229:        <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(-45 32 32)"/>
+230:      </svg>
+231:      <span class="axis-name">AXIS</span>
+232:    </div>
+233:    <div class="login-heading">Welcome to AXIS</div>
+234:    <div class="login-fields">
+235:      <input type="text" id="login-user" placeholder="Username" autocomplete="off">
+236:      <input type="password" id="login-pass" placeholder="Password" autocomplete="off">
+237:    </div>
+238:    <span class="login-error" id="login-error">Invalid credentials</span>
+239:    <button class="login-btn" id="login-btn">Sign In</button>
+240:  </div>
+241:</div>
+243:<!-- ═══════════════════════════════════════════════════════════ APP ══════════ -->
+244:<div id="app">
+246:  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
+247:  <aside id="sidebar">
+248:    <div class="sidebar-logo">
+249:      <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+250:        <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(45 32 32)"/>
+251:        <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(-45 32 32)"/>
+252:      </svg>
+253:      <span class="axis-name">AXIS</span>
+254:    </div>
+256:    <nav class="sidebar-nav">
+257:      <div class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
+258:        <!-- Grid icon -->
+259:        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+260:          <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+261:          <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+262:          <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
+263:          <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
+264:        </svg>
+265:        Dashboard
+266:      </div>
+267:      <div class="nav-item" data-view="agent" onclick="navigate('agent')">
+268:        <!-- Terminal icon -->
+269:        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+270:          <rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+271:          <path d="M4 6l2.5 2L4 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+272:          <path d="M8.5 10H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+273:        </svg>
+274:        Agent
+275:      </div>
+276:      <div class="nav-item" data-view="activity" onclick="navigate('activity')">
+277:        <!-- Pulse icon -->
+278:        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+279:          <path d="M1 8h2.5l2-4 3 8 2-4 1.5 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+280:        </svg>
+281:        Activity
+282:      </div>
+283:    </nav>
+285:    <div class="sidebar-footer">
+286:      <div class="user-info">
+287:        <div class="user-dot"></div>
+288:        <span class="user-name" id="sidebar-username">admin</span>
+289:      </div>
+290:      <button class="logout-btn" onclick="logout()">Sign out</button>
+291:    </div>
+292:  </aside>
+294:  <!-- ─── Main Wrapper ─────────────────────────────────────────────────────── -->
+295:  <div id="main-wrapper">
+296:    <!-- Topbar -->
+297:    <div id="topbar">
+298:      <span id="page-title">Dashboard</span>
+299:      <div class="etl-controls">
+300:        <button id="etl-trigger-btn" onclick="triggerETL()">Run ETL</button>
+301:        <div class="etl-indicator">
+302:          <div class="etl-dot idle" id="etl-dot"></div>
+303:          <span class="etl-label" id="etl-label">Idle</span>
+304:        </div>
+305:      </div>
+306:    </div>
+308:    <!-- Content -->
+309:    <div id="content-area">
+311:      <!-- ── Dashboard View ─────────────────────────────────────────────── -->
+312:      <div id="view-dashboard" class="view">
+313:        <div class="tab-bar">
+314:          <button class="tab-btn active" id="tab-crm-btn" onclick="switchDashTab('crm')">Sales &amp; CRM</button>
+315:          <button class="tab-btn" id="tab-finance-btn" onclick="switchDashTab('finance')">Finance &amp; Invoicing</button>
+316:        </div>
+318:        <!-- CRM tab -->
+319:        <div id="tab-crm" class="tab-content active">
+320:          <div class="kpi-grid">
+321:            <div class="kpi-card">
+322:              <div class="kpi-label">Total Revenue (Paid)</div>
+323:              <div class="kpi-value" id="crm-kpi-revenue"><span class="spinner"></span></div>
+324:              <div class="kpi-sub">TND</div>
+325:            </div>
+326:            <div class="kpi-card">
+327:              <div class="kpi-label">Total Deals</div>
+328:              <div class="kpi-value" id="crm-kpi-deals"><span class="spinner"></span></div>
+329:              <div class="kpi-sub">all time</div>
+330:            </div>
+331:            <div class="kpi-card">
+332:              <div class="kpi-label">Win Rate</div>
+333:              <div class="kpi-value positive" id="crm-kpi-winrate"><span class="spinner"></span></div>
+334:              <div class="kpi-sub">won / closed</div>
+335:            </div>
+336:            <div class="kpi-card">
+337:              <div class="kpi-label">Active Pipeline</div>
+338:              <div class="kpi-value" id="crm-kpi-pipeline"><span class="spinner"></span></div>
+339:              <div class="kpi-sub">TND open deals</div>
+340:            </div>
+341:          </div>
+343:          <div class="charts-section">
+344:            <div class="chart-card" id="card-revenue-trend">
+345:              <div class="chart-header">
+346:                <div class="chart-title">Monthly Revenue Trend</div>
+347:                <button class="fullscreen-btn" onclick="toggleFullscreen('card-revenue-trend')" title="Fullscreen">
+348:                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+349:                </button>
+350:              </div>
+351:              <div id="chart-revenue-trend" class="chart-container"></div>
+352:            </div>
+353:            <div class="chart-row">
+354:              <div class="chart-card" id="card-win-rate">
+355:                <div class="chart-header">
+356:                  <div class="chart-title">Win Rate by Quarter</div>
+357:                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-win-rate')" title="Fullscreen">
+358:                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+359:                  </button>
+360:                </div>
+361:                <div id="chart-win-rate" class="chart-container"></div>
+362:              </div>
+363:              <div class="chart-card" id="card-pipeline">
+364:                <div class="chart-header">
+365:                  <div class="chart-title">Pipeline by Stage</div>
+366:                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-pipeline')" title="Fullscreen">
+367:                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+368:                  </button>
+369:                </div>
+370:                <div id="chart-pipeline" class="chart-container"></div>
+371:              </div>
+372:            </div>
+373:            <div class="chart-row">
+374:              <div class="chart-card" id="card-top-clients">
+375:                <div class="chart-header">
+376:                  <div class="chart-title">Top 10 Clients by Won Deal Value</div>
+377:                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-top-clients')" title="Fullscreen">
+378:                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+379:                  </button>
+380:                </div>
+381:                <div id="chart-top-clients" class="chart-container tall"></div>
+382:              </div>
+383:              <div class="chart-card" id="card-new-vs-closed">
+384:                <div class="chart-header">
+385:                  <div class="chart-title">New Deals vs Closed Deals</div>
+386:                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-new-vs-closed')" title="Fullscreen">
+387:                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+388:                  </button>
+389:                </div>
+390:                <div id="chart-new-vs-closed" class="chart-container tall"></div>
+391:              </div>
+392:            </div>
+393:            <div class="chart-card" id="card-deal-size">
+394:              <div class="chart-header">
+395:                <div class="chart-title">Deal Size Distribution</div>
+396:                <button class="fullscreen-btn" onclick="toggleFullscreen('card-deal-size')" title="Fullscreen">
+397:                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+398:                </button>
+399:              </div>
+400:              <div id="chart-deal-size" class="chart-container"></div>
+401:            </div>
+402:          </div>
+403:        </div>
+405:        <!-- Finance tab -->
+406:        <div id="tab-finance" class="tab-content">
+407:          <div class="kpi-grid">
+408:            <div class="kpi-card">
+409:              <div class="kpi-label">Total Collected</div>
+410:              <div class="kpi-value positive" id="fin-kpi-collected"><span class="spinner"></span></div>
+411:              <div class="kpi-sub">TND paid</div>
+412:            </div>
+413:            <div class="kpi-card">
+414:              <div class="kpi-label">Total Pending</div>
+415:              <div class="kpi-value" id="fin-kpi-pending"><span class="spinner"></span></div>
+416:              <div class="kpi-sub">TND awaiting</div>
+417:            </div>
+418:            <div class="kpi-card">
+419:              <div class="kpi-label">Total Overdue</div>
+420:              <div class="kpi-value negative" id="fin-kpi-overdue"><span class="spinner"></span></div>
+421:              <div class="kpi-sub">TND past due</div>
+422:            </div>
+423:            <div class="kpi-card">
+424:              <div class="kpi-label">Collection Rate</div>
+425:              <div class="kpi-value positive" id="fin-kpi-rate"><span class="spinner"></span></div>
+426:              <div class="kpi-sub">paid / total</div>
+427:            </div>
+428:          </div>
+430:          <div class="charts-section">
+431:            <div class="chart-card" id="card-rev-year">
+432:              <div class="chart-header">
+433:                <div class="chart-title">Revenue by Year</div>
+434:                <button class="fullscreen-btn" onclick="toggleFullscreen('card-rev-year')" title="Fullscreen">
+435:                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+436:                </button>
+437:              </div>
+438:              <div id="chart-rev-year" class="chart-container"></div>
+439:            </div>
+440:            <div class="chart-row">
+441:              <div class="chart-card" id="card-cumulative">
+442:                <div class="chart-header">
+443:                  <div class="chart-title">Cumulative Revenue</div>
+444:                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-cumulative')" title="Fullscreen">
+445:                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+446:                  </button>
+447:                </div>
+448:                <div id="chart-cumulative" class="chart-container"></div>
+449:              </div>
+450:              <div class="chart-card" id="card-payment-delay">
+451:                <div class="chart-header">
+452:                  <div class="chart-title">Payment Delay Distribution</div>
+453:                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-payment-delay')" title="Fullscreen">
+454:                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+455:                  </button>
+456:                </div>
+457:                <div id="chart-payment-delay" class="chart-container"></div>
+458:              </div>
+459:            </div>
+460:            <div class="chart-row">
+461:              <div class="chart-card" id="card-status-dist">
+462:                <div class="chart-header">
+463:                  <div class="chart-title">Invoice Status Distribution</div>
+464:                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-status-dist')" title="Fullscreen">
+465:                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+466:                  </button>
+467:                </div>
+468:                <div id="chart-status-dist" class="chart-container"></div>
+469:              </div>
+470:              <div class="chart-card" id="card-fin-top-clients">
+471:                <div class="chart-header">
+472:                  <div class="chart-title">Top 10 Clients by Invoice Value</div>
+473:                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-fin-top-clients')" title="Fullscreen">
+474:                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+475:                  </button>
+476:                </div>
+477:                <div id="chart-fin-top-clients" class="chart-container"></div>
+478:              </div>
+479:            </div>
+480:            <div class="chart-card" id="card-monthly-activity">
+481:              <div class="chart-header">
+482:                <div class="chart-title">Monthly Invoicing Activity</div>
+483:                <button class="fullscreen-btn" onclick="toggleFullscreen('card-monthly-activity')" title="Fullscreen">
+484:                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+485:                </button>
+486:              </div>
+487:              <div id="chart-monthly-activity" class="chart-container"></div>
+488:            </div>
+489:          </div>
+490:        </div>
+491:      </div>
+493:      <!-- ── Agent View ──────────────────────────────────────────────────── -->
+494:      <div id="view-agent" class="view">
+495:        <div class="agent-layout">
+496:          <!-- Chat column -->
+497:          <div class="agent-chat">
+498:            <div class="agent-chat-header">
+499:              <div class="agent-chat-title">AXIS Agent</div>
+500:              <button class="agent-clear-btn" onclick="clearAgentChat()">Clear</button>
+501:            </div>
+502:            <div class="agent-messages" id="agent-messages">
+503:              <div class="msg-agent">
+504:                <div class="msg-tag tag-orchestrator">Orchestrator</div>
+505:                <div class="msg-bubble">Hello! I'm the AXIS Agent. I can help you analyze sales pipeline, invoicing data, or answer questions about your ERP data. What would you like to know?</div>
+506:              </div>
+507:            </div>
+508:            <div class="agent-input-area">
+509:              <input class="agent-input" id="agent-input" type="text" placeholder="Ask about deals, revenue, clients..." />
+510:              <button class="agent-send-btn" id="agent-send-btn" onclick="sendAgentMessage()">
+511:                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L14 2L8 14L7 9L2 8Z" fill="#F0F0F0"/></svg>
+512:              </button>
+513:            </div>
+514:          </div>
+515:          <!-- Sub-agent panel -->
+516:          <div class="agent-panel-right">
+517:            <div class="agent-panel-title">Active Agents</div>
+518:            <div class="subagent-card" id="agent-card-sales">
+519:              <div class="subagent-dot" id="dot-sales" style="background:#333"></div>
+520:              <div class="subagent-info">
+521:                <div class="subagent-name">Sales Intelligence</div>
+522:                <div class="subagent-role">Deals, pipeline, stages &amp; CRM analysis</div>
+523:                <div class="subagent-status" id="status-sales" style="color:#666">Standby</div>
+524:              </div>
+525:            </div>
+526:            <div class="subagent-card" id="agent-card-finance">
+527:              <div class="subagent-dot" id="dot-finance" style="background:#333"></div>
+528:              <div class="subagent-info">
+529:                <div class="subagent-name">Finance</div>
+530:                <div class="subagent-role">Invoices, revenue &amp; payment tracking</div>
+531:                <div class="subagent-status" id="status-finance" style="color:#666">Standby</div>
+532:              </div>
+533:            </div>
+534:            <div class="subagent-card" id="agent-card-data">
+535:              <div class="subagent-dot" id="dot-data" style="background:#333"></div>
+536:              <div class="subagent-info">
+537:                <div class="subagent-name">Data Analyst</div>
+538:                <div class="subagent-role">Charts, trends &amp; dashboard insights</div>
+539:                <div class="subagent-status" id="status-data" style="color:#666">Standby</div>
+540:              </div>
+541:            </div>
+542:            <div class="subagent-card" id="agent-card-orchestrator">
+543:              <div class="subagent-dot" id="dot-orchestrator" style="background:#6C63FF"></div>
+544:              <div class="subagent-info">
+545:                <div class="subagent-name">Orchestrator</div>
+546:                <div class="subagent-role">Routes queries to specialist agents</div>
+547:                <div class="subagent-status" id="status-orchestrator" style="color:#6C63FF">Active</div>
+548:              </div>
+549:            </div>
+550:          </div>
+551:        </div>
+552:      </div>
+554:      <!-- ── Activity View ───────────────────────────────────────────────── -->
+555:      <div id="view-activity" class="view">
+556:        <div class="activity-header">
+557:          <div class="activity-title">System Activity Log</div>
+558:          <div class="filter-bar">
+559:            <button class="filter-btn active" data-filter="all" onclick="filterActivity('all')">All</button>
+560:            <button class="filter-btn" data-filter="add" onclick="filterActivity('add')">Additions</button>
+561:            <button class="filter-btn" data-filter="update" onclick="filterActivity('update')">Updates</button>
+562:            <button class="filter-btn" data-filter="delete" onclick="filterActivity('delete')">Deletions</button>
+563:            <button class="filter-btn" data-filter="etl" onclick="filterActivity('etl')">ETL</button>
+564:          </div>
+565:        </div>
+566:        <div class="activity-table-wrap">
+567:          <table class="activity-table">
+568:            <thead>
+569:              <tr>
+570:                <th>Timestamp</th>
+571:                <th>Action</th>
+572:                <th>Entity</th>
+573:                <th>Details</th>
+574:                <th>Status</th>
+575:              </tr>
+576:            </thead>
+577:            <tbody id="activity-table-body">
+578:              <tr><td colspan="5" style="text-align:center;color:#666;padding:32px">Loading activity log...</td></tr>
+579:            </tbody>
+580:          </table>
+581:        </div>
+582:      </div>
+584:    </div><!-- /content-area -->
+585:  </div><!-- /main-wrapper -->
+587:  <!-- ─── Panel Toggle Button ────────────────────────────────────────────────── -->
+588:  <button id="panel-toggle" onclick="toggleActivityPanel()" title="Toggle Activity Panel">
+589:    <svg id="panel-toggle-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+590:      <path d="M8 2L4 6L8 10" stroke="#6C63FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+591:    </svg>
+592:  </button>
+594:  <!-- ─── Right Panel (overlay) ───────────────────────────────────────────── -->
+595:  <aside id="right-panel">
+596:    <div class="panel-header">
+597:      <div class="panel-title">Agent Activity</div>
+598:    </div>
+599:    <div id="activity-feed">
+600:      <div class="feed-empty">No recent activity</div>
+601:    </div>
+602:  </aside>
+604:</div><!-- /app -->
+606:<!-- ═══════════════════════════════════════════════════ JAVASCRIPT ═══════════ -->
+607:<script>
+608:'use strict';
+610:// ── Constants ──────────────────────────────────────────────────────────────
+611:const COLORS = {
+612:  indigo:  '#6C63FF',
+613:  cyan:    '#00D4FF',
+614:  green:   '#3ECF8E',
+615:  red:     '#FF4D4D',
+616:  text:    '#F0F0F0',
+617:  muted:   '#666666',
+618:  grid:    '#1E1E1E',
+619:};
+621:const PLOTLY_BASE = {
+622:  paper_bgcolor: 'transparent',
+623:  plot_bgcolor:  'transparent',
+624:  font: { color: COLORS.text, family: 'Inter, sans-serif', size: 11 },
+625:  margin: { l: 80, r: 30, t: 40, b: 60, pad: 0 },
+626:  xaxis: { gridcolor: COLORS.grid, linecolor: COLORS.grid, zerolinecolor: COLORS.grid, tickfont: {size: 11}, automargin: true },
+627:  yaxis: { gridcolor: COLORS.grid, linecolor: COLORS.grid, zerolinecolor: COLORS.grid, tickfont: {size: 11}, automargin: true },
+628:  legend: { bgcolor: 'transparent', bordercolor: COLORS.grid },
+629:  hovermode: 'x unified',
+630:};
+632:const PLOTLY_CFG = { displayModeBar: false, responsive: true };
+634:// ── State ──────────────────────────────────────────────────────────────────
+635:const state = {
+636:  view:         'dashboard',
+637:  dashTab:      'crm',
+638:  user:         null,
+639:  etlStatus:    'idle',
+640:  etlPollTimer: null,
+641:  feedPollTimer: null,
+642:  activityFilter: 'all',
+643:  activityData:  [],
+644:  feedData:      [],
+645:  crmLoaded:     false,
+646:  finLoaded:     false,
+647:};
+649:// ── Helpers ────────────────────────────────────────────────────────────────
+650:function fmt(n) {
+651:  if (n === null || n === undefined || isNaN(n)) return '—';
+652:  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+653:  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+654:  return Number(n).toLocaleString('en-US', { maximumFractionDigits: 1 });
+655:}
+657:function fmtTime(iso) {
+658:  if (!iso) return '';
+659:  const d = new Date(iso);
+660:  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+661:       + ' ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+662:}
+664:async function apiFetch(url) {
+665:  const r = await fetch(url);
+666:  if (!r.ok) throw new Error(`${url} → ${r.status}`);
+667:  return r.json();
+668:}
+670:// ── Auth ───────────────────────────────────────────────────────────────────
+671:function login() {
+672:  const u = document.getElementById('login-user').value.trim();
+673:  const p = document.getElementById('login-pass').value;
+674:  const err = document.getElementById('login-error');
+675:  if (u === 'admin' && p === 'axis2024') {
+676:    err.style.display = 'none';
+677:    state.user = u;
+678:    document.getElementById('sidebar-username').textContent = u;
+679:    const ls = document.getElementById('login-screen');
+680:    ls.style.animation = 'fadeOut .5s ease forwards';
+681:    setTimeout(() => {
+682:      ls.style.display = 'none';
+683:      const app = document.getElementById('app');
+684:      app.style.display = 'flex';
+685:      app.style.animation = 'fadeIn .5s ease';
+686:      navigate('dashboard');
+687:      startPolling();
+688:    }, 480);
+689:  } else {
+690:    err.style.display = 'block';
+691:  }
+692:}
+694:function logout() {
+695:  stopPolling();
+696:  state.crmLoaded = false;
+697:  state.finLoaded = false;
+698:  const app = document.getElementById('app');
+699:  app.style.animation = 'fadeOut .4s ease forwards';
+700:  setTimeout(() => {
+701:    app.style.display = 'none';
+702:    app.style.animation = '';
+703:    document.getElementById('login-user').value = '';
+704:    document.getElementById('login-pass').value = '';
+705:    const ls = document.getElementById('login-screen');
+706:    ls.style.display = 'flex';
+707:    ls.style.animation = 'fadeIn .5s ease';
+708:  }, 380);
+709:}
+711:// ── Navigation ─────────────────────────────────────────────────────────────
+712:const VIEW_TITLES = { dashboard: 'Dashboard', agent: 'Agent', activity: 'Activity Log' };
+714:function navigate(view) {
+715:  state.view = view;
+716:  document.querySelectorAll('.nav-item').forEach(el => {
+717:    el.classList.toggle('active', el.dataset.view === view);
+718:  });
+719:  document.querySelectorAll('#content-area .view').forEach(el => {
+720:    el.style.display = 'none';
+721:  });
+722:  const vEl = document.getElementById('view-' + view);
+723:  if (vEl) {
+724:    vEl.style.display = view === 'agent' ? 'flex' : 'block';
+725:    vEl.style.animation = 'fadeIn .3s ease';
+726:  }
+727:  // Agent view needs full height — remove content-area padding
+728:  document.getElementById('content-area').style.padding = view === 'agent' ? '0' : '24px';
+729:  document.getElementById('page-title').textContent = VIEW_TITLES[view] || view;
+730:  if (view === 'dashboard') {
+731:    switchDashTab(state.dashTab, false);
+732:  } else if (view === 'activity') {
+733:    renderActivityTable();
+734:  }
+735:}
+737:function switchDashTab(tab, load = true) {
+738:  state.dashTab = tab;
+739:  document.getElementById('tab-crm-btn').classList.toggle('active', tab === 'crm');
+740:  document.getElementById('tab-finance-btn').classList.toggle('active', tab === 'finance');
+741:  document.getElementById('tab-crm').classList.toggle('active', tab === 'crm');
+742:  document.getElementById('tab-finance').classList.toggle('active', tab === 'finance');
+743:  if (tab === 'crm' && !state.crmLoaded)     loadCRM();
+744:  if (tab === 'finance' && !state.finLoaded) loadFinance();
+745:}
+747:// ── ETL ────────────────────────────────────────────────────────────────────
+748:async function triggerETL() {
+749:  const btn = document.getElementById('etl-trigger-btn');
+750:  btn.disabled = true;
+751:  btn.textContent = 'Running...';
+752:  try {
+753:    await fetch('/api/etl/trigger', { method: 'POST' });
+754:    updateETLDot('running');
+755:  } catch(e) { console.error(e); }
+756:}
+758:function updateETLDot(status) {
+759:  state.etlStatus = status;
+760:  const dot   = document.getElementById('etl-dot');
+761:  const label = document.getElementById('etl-label');
+762:  const btn   = document.getElementById('etl-trigger-btn');
+763:  dot.className = 'etl-dot ' + status;
+764:  label.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+765:  if (status !== 'running') {
+766:    btn.disabled = false;
+767:    btn.textContent = 'Run ETL';
+768:  }
+769:}
+771:async function pollETL() {
+772:  try {
+773:    const d = await apiFetch('/api/etl/status');
+774:    updateETLDot(d.status || 'idle');
+775:  } catch(e) {}
+776:}
+778:// ── Activity Feed (right panel) ────────────────────────────────────────────
+779:const DOT_CLASS = { add: 'add', update: 'update', delete: 'delete', etl: 'etl' };
+781:async function pollFeed() {
+782:  try {
+783:    const rows = await apiFetch('/api/activity/feed');
+784:    state.activityData = rows;
+785:    renderFeed(rows);
+786:    if (state.view === 'activity') renderActivityTable();
+787:  } catch(e) {}
+788:}
+790:function renderFeed(rows) {
+791:  const el = document.getElementById('activity-feed');
+792:  if (!rows || rows.length === 0) {
+793:    el.innerHTML = '<div class="feed-empty">No recent activity</div>';
+794:    return;
+795:  }
+796:  el.innerHTML = rows.slice(0, 20).map(r => {
+797:    const dc = DOT_CLASS[r.action_type] || 'update';
+798:    return `
+799:      <div class="feed-item">
+800:        <div class="feed-dot ${dc}"></div>
+801:        <div class="feed-content">
+802:          <div class="feed-action">${r.action_type || '—'}</div>
+803:          <div class="feed-entity">${r.entity || ''}</div>
+804:          <div class="feed-details" title="${r.details || ''}">${r.details || ''}</div>
+805:        </div>
+806:        <div class="feed-time">${fmtTime(r.timestamp)}</div>
+807:      </div>`;
+808:  }).join('');
+809:}
+811:// ── Activity Table ─────────────────────────────────────────────────────────
+812:function filterActivity(f) {
+813:  state.activityFilter = f;
+814:  document.querySelectorAll('.filter-btn').forEach(b => {
+815:    b.classList.toggle('active', b.dataset.filter === f);
+816:  });
+817:  renderActivityTable();
+818:}
+820:function renderActivityTable() {
+821:  const rows = state.activityData;
+822:  const f    = state.activityFilter;
+823:  const tbody = document.getElementById('activity-table-body');
+824:  if (!rows || rows.length === 0) {
+825:    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#666;padding:32px">No activity recorded yet</td></tr>';
+826:    return;
+827:  }
+828:  const filtered = f === 'all' ? rows : rows.filter(r => r.action_type === f);
+829:  if (filtered.length === 0) {
+830:    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#666;padding:32px">No entries matching this filter</td></tr>';
+831:    return;
+832:  }
+833:  const dotColors = { add:'#3ECF8E', update:'#00D4FF', delete:'#FF4D4D', etl:'#6C63FF' };
+834:  tbody.innerHTML = filtered.map(r => {
+835:    const dc = dotColors[r.action_type] || COLORS.muted;
+836:    const sc = r.status === 'error' ? 'error' : 'success';
+837:    return `<tr>
+838:      <td style="color:#666;white-space:nowrap">${fmtTime(r.timestamp)}</td>
+839:      <td><span class="act-type-dot" style="background:${dc}"></span>${r.action_type || '—'}</td>
+840:      <td>${r.entity || '—'}</td>
+841:      <td style="color:#666;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.details || '—'}</td>
+842:      <td><span class="status-badge ${sc}">${r.status || '—'}</span></td>
+843:    </tr>`;
+844:  }).join('');
+845:}
+847:// ── Polling control ────────────────────────────────────────────────────────
+848:function startPolling() {
+849:  pollFeed();
+850:  pollETL();
+851:  state.feedPollTimer = setInterval(pollFeed, 5000);
+852:  state.etlPollTimer  = setInterval(pollETL, 3000);
+853:}
+855:function stopPolling() {
+856:  clearInterval(state.feedPollTimer);
+857:  clearInterval(state.etlPollTimer);
+858:}
+860:// ── CRM Charts ─────────────────────────────────────────────────────────────
+861:async function loadCRM() {
+862:  state.crmLoaded = true;
+863:  try {
+864:    const [kpis, trend, wr, pipeline, clients, nvc, sizes] = await Promise.all([
+865:      apiFetch('/api/crm/kpis'),
+866:      apiFetch('/api/crm/revenue-trend'),
+867:      apiFetch('/api/crm/win-rate'),
+868:      apiFetch('/api/crm/pipeline-stage'),
+869:      apiFetch('/api/crm/top-clients'),
+870:      apiFetch('/api/crm/new-vs-closed'),
+871:      apiFetch('/api/crm/deal-size'),
+872:    ]);
+873:    renderCRMKPIs(kpis);
+874:    renderRevenueTrend(trend);
+875:    renderWinRate(wr);
+876:    renderPipeline(pipeline);
+877:    renderTopClients(clients);
+878:    renderNewVsClosed(nvc);
+879:    renderDealSize(sizes);
+880:  } catch(e) {
+881:    console.error('CRM load error:', e);
+882:    state.crmLoaded = false;
+883:  }
+884:}
+886:function renderCRMKPIs(d) {
+887:  document.getElementById('crm-kpi-revenue').textContent  = fmt(d.total_revenue);
+888:  document.getElementById('crm-kpi-deals').textContent    = fmt(d.total_deals);
+889:  document.getElementById('crm-kpi-winrate').textContent  = (d.win_rate || 0).toFixed(1) + '%';
+890:  document.getElementById('crm-kpi-pipeline').textContent = fmt(d.active_pipeline);
+891:}
+893:function renderRevenueTrend(rows) {
+894:  if (!rows.length) return;
+895:  const layout = Object.assign({}, PLOTLY_BASE, {
+896:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Month', type: 'date', tickfont: {size: 11}, automargin: true }),
+897:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Revenue (TND)', tickfont: {size: 11}, automargin: true }),
+898:    margin: { l: 80, r: 30, t: 40, b: 60 },
+899:  });
+900:  Plotly.newPlot('chart-revenue-trend', [{
+901:    x: rows.map(r => r.date), y: rows.map(r => r.revenue),
+902:    type: 'scatter', mode: 'lines', name: 'Revenue',
+903:    line: { color: COLORS.indigo, width: 2.5 },
+904:    fill: 'tozeroy', fillcolor: 'rgba(108,99,255,0.1)',
+905:    hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>',
+906:  }], layout, PLOTLY_CFG);
+907:}
+909:function renderWinRate(rows) {
+910:  if (!rows.length) return;
+911:  const layout = Object.assign({}, PLOTLY_BASE, {
+912:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Quarter', type: 'category', tickfont: {size: 11}, automargin: true }),
+913:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Win Rate (%)', range: [0, 100], tickfont: {size: 11}, automargin: true }),
+914:    margin: { l: 80, r: 30, t: 40, b: 60 },
+915:    showlegend: false,
+916:  });
+917:  Plotly.newPlot('chart-win-rate', [{
+918:    x: rows.map(r => r.quarter), y: rows.map(r => r.win_rate),
+919:    type: 'bar', name: 'Win Rate',
+920:    marker: { color: rows.map(r => r.win_rate >= 40 ? COLORS.green : COLORS.indigo) },
+921:    text: rows.map(r => r.win_rate.toFixed(1) + '%'),
+922:    textposition: 'outside',
+923:    hovertemplate: '%{x}<br>%{y:.1f}%<extra></extra>',
+924:  }], layout, PLOTLY_CFG);
+925:}
+927:function renderPipeline(rows) {
+928:  if (!rows.length) return;
+929:  const layout = Object.assign({}, PLOTLY_BASE, {
+930:    funnelmode: 'stack',
+931:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { type: 'category', tickfont: {size: 11}, automargin: true }),
+932:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { tickfont: {size: 11}, automargin: true }),
+933:    margin: { l: 80, r: 30, t: 40, b: 60 },
+934:  });
+935:  Plotly.newPlot('chart-pipeline', [{
+936:    type: 'funnel',
+937:    y: rows.map(r => r.stage),
+938:    x: rows.map(r => r.deal_count),
+939:    textinfo: 'value',
+940:    marker: { color: COLORS.indigo },
+941:    connector: { line: { color: COLORS.grid, width: 1 } },
+942:    hovertemplate: '%{label}: %{value:,}<extra></extra>',
+943:  }], layout, PLOTLY_CFG);
+944:}
+946:function renderTopClients(rows) {
+947:  if (!rows.length) return;
+948:  const sorted = [...rows].sort((a,b) => a.total_value - b.total_value);
+949:  const layout = Object.assign({}, PLOTLY_BASE, {
+950:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Value (TND)', tickfont: {size: 11}, automargin: true }),
+951:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { type: 'category', tickfont: {size: 11}, automargin: true }),
+952:    margin: { l: 220, r: 120, t: 40, b: 60 },
+953:    showlegend: false,
+954:  });
+955:  Plotly.newPlot('chart-top-clients', [{
+956:    type: 'bar', orientation: 'h',
+957:    x: sorted.map(r => r.total_value),
+958:    y: sorted.map(r => r.company_name),
+959:    marker: { color: COLORS.green },
+960:    text: sorted.map(r => fmt(r.total_value) + ' TND'),
+961:    textposition: 'outside',
+962:    hovertemplate: '%{y}<br>%{x:,.0f} TND<extra></extra>',
+963:  }], layout, PLOTLY_CFG);
+964:}
+966:function renderNewVsClosed(data) {
+967:  const newDeals    = data.new_deals    || [];
+968:  const closedDeals = data.closed_deals || [];
+969:  if (!newDeals.length && !closedDeals.length) return;
+970:  const layout = Object.assign({}, PLOTLY_BASE, {
+971:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Month', type: 'date', tickfont: {size: 11}, automargin: true }),
+972:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Count', tickfont: {size: 11}, automargin: true }),
+973:    margin: { l: 80, r: 30, t: 40, b: 60 },
+974:  });
+975:  Plotly.newPlot('chart-new-vs-closed', [
+976:    {
+977:      x: newDeals.map(r => r.month), y: newDeals.map(r => r.count),
+978:      type: 'scatter', mode: 'lines', name: 'New Deals',
+979:      line: { color: COLORS.indigo, width: 2 },
+980:      hovertemplate: '%{x}<br>%{y:,.0f}<extra></extra>',
+981:    },
+982:    {
+983:      x: closedDeals.map(r => r.month), y: closedDeals.map(r => r.count),
+984:      type: 'scatter', mode: 'lines', name: 'Closed Deals',
+985:      line: { color: COLORS.cyan, width: 2 },
+986:      hovertemplate: '%{x}<br>%{y:,.0f}<extra></extra>',
+987:    },
+988:  ], layout, PLOTLY_CFG);
+989:}
+991:function renderDealSize(rows) {
+992:  if (!rows.length) return;
+993:  const palette = [COLORS.indigo, COLORS.green, COLORS.cyan, COLORS.red];
+994:  const layout = Object.assign({}, PLOTLY_BASE, {
+995:    margin: { l: 16, r: 16, t: 32, b: 16 },
+996:    legend: { bgcolor: 'transparent', orientation: 'h', y: -0.1 },
+997:  });
+998:  Plotly.newPlot('chart-deal-size', [{
+999:    type: 'pie', hole: 0.38,
+1000:    labels: rows.map(r => r.deal_size_category),
+1001:    values: rows.map(r => r.deal_count),
+1002:    marker: { colors: palette },
+1003:    textinfo: 'percent+label',
+1004:    textfont: { color: COLORS.text },
+1005:  }], layout, PLOTLY_CFG);
+1006:}
+1008:// ── Finance Charts ─────────────────────────────────────────────────────────
+1009:async function loadFinance() {
+1010:  state.finLoaded = true;
+1011:  try {
+1012:    const [kpis, revYear, cum, delay, statusDist, clients, monthly] = await Promise.all([
+1013:      apiFetch('/api/finance/kpis'),
+1014:      apiFetch('/api/finance/revenue-year'),
+1015:      apiFetch('/api/finance/cumulative'),
+1016:      apiFetch('/api/finance/payment-delay'),
+1017:      apiFetch('/api/finance/status-dist'),
+1018:      apiFetch('/api/finance/top-clients'),
+1019:      apiFetch('/api/finance/monthly'),
+1020:    ]);
+1021:    renderFinanceKPIs(kpis);
+1022:    renderRevYear(revYear);
+1023:    renderCumulative(cum);
+1024:    renderPaymentDelay(delay);
+1025:    renderStatusDist(statusDist);
+1026:    renderFinTopClients(clients);
+1027:    renderMonthly(monthly);
+1028:  } catch(e) {
+1029:    console.error('Finance load error:', e);
+1030:    state.finLoaded = false;
+1031:  }
+1032:}
+1034:function renderFinanceKPIs(d) {
+1035:  document.getElementById('fin-kpi-collected').textContent = fmt(d.collected);
+1036:  document.getElementById('fin-kpi-pending').textContent   = fmt(d.pending);
+1037:  document.getElementById('fin-kpi-overdue').textContent   = fmt(d.overdue);
+1038:  document.getElementById('fin-kpi-rate').textContent      = (d.collection_rate || 0).toFixed(1) + '%';
+1039:}
+1041:function renderRevYear(rows) {
+1042:  if (!rows.length) return;
+1043:  const layout = Object.assign({}, PLOTLY_BASE, {
+1044:    barmode: 'group',
+1045:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Year', type: 'category', tickfont: {size: 11}, automargin: true }),
+1046:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Amount (TND)', tickfont: {size: 11}, automargin: true }),
+1047:    margin: { l: 80, r: 30, t: 40, b: 60 },
+1048:  });
+1049:  Plotly.newPlot('chart-rev-year', [
+1050:    { name: 'Collected', x: rows.map(r=>String(r.year)), y: rows.map(r=>r.collected), type:'bar', marker:{color:COLORS.green},  hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>' },
+1051:    { name: 'Pending',   x: rows.map(r=>String(r.year)), y: rows.map(r=>r.pending),   type:'bar', marker:{color:COLORS.indigo}, hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>' },
+1052:    { name: 'Overdue',   x: rows.map(r=>String(r.year)), y: rows.map(r=>r.overdue),   type:'bar', marker:{color:COLORS.red},    hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>' },
+1053:  ], layout, PLOTLY_CFG);
+1054:}
+1056:function renderCumulative(rows) {
+1057:  if (!rows.length) return;
+1058:  const layout = Object.assign({}, PLOTLY_BASE, {
+1059:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Month', type: 'date', tickfont: {size: 11}, automargin: true }),
+1060:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Cumulative Revenue (TND)', tickfont: {size: 11}, automargin: true }),
+1061:    margin: { l: 80, r: 30, t: 40, b: 60 },
+1062:  });
+1063:  Plotly.newPlot('chart-cumulative', [{
+1064:    x: rows.map(r=>r.date), y: rows.map(r=>r.cumulative),
+1065:    type:'scatter', mode:'lines', name:'Cumulative',
+1066:    line: { color: COLORS.green, width: 2.5 },
+1067:    fill: 'tozeroy', fillcolor: 'rgba(62,207,142,0.1)',
+1068:    hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>',
+1069:  }], layout, PLOTLY_CFG);
+1070:}
+1072:function renderPaymentDelay(rows) {
+1073:  if (!rows.length) return;
+1074:  const ORDER = ['On Time','Late 1-30 days','Late 31-60 days','Late 60+ days'];
+1075:  const colorMap = {
+1076:    'On Time':        COLORS.green,
+1077:    'Late 1-30 days': COLORS.indigo,
+1078:    'Late 31-60 days':COLORS.cyan,
+1079:    'Late 60+ days':  COLORS.red,
+1080:  };
+1081:  const sorted = ORDER.map(cat => rows.find(r=>r.delay_category===cat)).filter(Boolean);
+1082:  const layout = Object.assign({}, PLOTLY_BASE, {
+1083:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: '', type: 'category', tickfont: {size: 11}, automargin: true }),
+1084:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Invoice Count', tickfont: {size: 11}, automargin: true }),
+1085:    margin: { l: 80, r: 30, t: 40, b: 60 },
+1086:    showlegend: false,
+1087:  });
+1088:  Plotly.newPlot('chart-payment-delay', [{
+1089:    type: 'bar',
+1090:    x: sorted.map(r=>r.delay_category),
+1091:    y: sorted.map(r=>r.count),
+1092:    marker: { color: sorted.map(r=>colorMap[r.delay_category]||COLORS.indigo) },
+1093:    text: sorted.map(r=>r.count),
+1094:    textposition: 'outside',
+1095:    hovertemplate: '%{x}<br>%{y:,} invoices<extra></extra>',
+1096:  }], layout, PLOTLY_CFG);
+1097:}
+1099:function renderStatusDist(rows) {
+1100:  if (!rows.length) return;
+1101:  const colorMap = { paid:COLORS.green, pending:COLORS.indigo, overdue:COLORS.red, partial:COLORS.cyan, cancelled:COLORS.muted };
+1102:  const layout = Object.assign({}, PLOTLY_BASE, {
+1103:    margin: { l:16, r:16, t:32, b:16 },
+1104:    legend: { bgcolor:'transparent', orientation:'h', y:-0.1 },
+1105:  });
+1106:  Plotly.newPlot('chart-status-dist', [{
+1107:    type:'pie', hole:0.38,
+1108:    labels: rows.map(r=>r.status),
+1109:    values: rows.map(r=>r.invoice_count),
+1110:    marker: { colors: rows.map(r=>colorMap[r.status]||COLORS.indigo) },
+1111:    textinfo: 'percent+label',
+1112:    textfont: { color: COLORS.text },
+1113:  }], layout, PLOTLY_CFG);
+1114:}
+1116:function renderFinTopClients(rows) {
+1117:  if (!rows.length) return;
+1118:  const sorted = [...rows].sort((a,b)=>a.total_invoiced-b.total_invoiced);
+1119:  const layout = Object.assign({}, PLOTLY_BASE, {
+1120:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Amount (TND)', tickfont: {size: 11}, automargin: true }),
+1121:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { type: 'category', tickfont: {size: 11}, automargin: true }),
+1122:    margin: { l: 220, r: 120, t: 40, b: 60 },
+1123:    showlegend: false,
+1124:  });
+1125:  Plotly.newPlot('chart-fin-top-clients', [{
+1126:    type:'bar', orientation:'h',
+1127:    x: sorted.map(r=>r.total_invoiced),
+1128:    y: sorted.map(r=>r.company_name),
+1129:    marker: { color: COLORS.indigo },
+1130:    text: sorted.map(r=>fmt(r.total_invoiced)+' TND'),
+1131:    textposition: 'outside',
+1132:    hovertemplate: '%{y}<br>%{x:,.0f} TND<extra></extra>',
+1133:  }], layout, PLOTLY_CFG);
+1134:}
+1136:function renderMonthly(rows) {
+1137:  if (!rows.length) return;
+1138:  const dates = rows.map(d => `${d.year}-${String(d.month).padStart(2,'0')}-01`);
+1139:  const layout = Object.assign({}, PLOTLY_BASE, {
+1140:    barmode: 'stack',
+1141:    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Month', type: 'date', tickfont: {size: 11}, automargin: true }),
+1142:    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Invoice Count', tickfont: {size: 11}, automargin: true }),
+1143:    margin: { l: 80, r: 30, t: 40, b: 60 },
+1144:  });
+1145:  Plotly.newPlot('chart-monthly-activity', [
+1146:    { name:'Issued',  x:dates, y:rows.map(r=>r.issued),  type:'bar', marker:{color:COLORS.indigo}, hovertemplate: '%{x}<br>%{y:,} issued<extra></extra>' },
+1147:    { name:'Paid',    x:dates, y:rows.map(r=>r.paid),    type:'bar', marker:{color:COLORS.green},  hovertemplate: '%{x}<br>%{y:,} paid<extra></extra>' },
+1148:    { name:'Overdue', x:dates, y:rows.map(r=>r.overdue), type:'bar', marker:{color:COLORS.red},    hovertemplate: '%{x}<br>%{y:,} overdue<extra></extra>' },
+1149:  ], layout, PLOTLY_CFG);
+1150:}
+1152:// ── Fullscreen chart toggle ────────────────────────────────────────────────
+1153:function toggleFullscreen(cardId) {
+1154:  const card = document.getElementById(cardId);
+1155:  if (!card) return;
+1156:  const chartEl = card.querySelector('.chart-container');
+1157:  if (!chartEl) return;
+1158:  const chartId = chartEl.id;
+1159:  if (card.classList.contains('fullscreen')) {
+1160:    card.classList.remove('fullscreen');
+1161:  } else {
+1162:    card.classList.add('fullscreen');
+1163:  }
+1164:  setTimeout(() => Plotly.relayout(chartId, {autosize: true}), 50);
+1165:}
+1167:// ── Keyboard shortcuts ─────────────────────────────────────────────────────
+1168:document.addEventListener('keydown', e => {
+1169:  if (e.key === 'Escape') {
+1170:    document.querySelectorAll('.chart-card.fullscreen').forEach(card => {
+1171:      const chartEl = card.querySelector('.chart-container');
+1172:      card.classList.remove('fullscreen');
+1173:      if (chartEl) setTimeout(() => Plotly.relayout(chartEl.id, {autosize: true}), 50);
+1174:    });
+1175:  }
+1176:  if (e.key === 'Enter' && document.getElementById('login-screen').style.display === 'flex') {
+1177:    login();
+1178:  }
+1179:});
+1181:document.getElementById('login-btn').addEventListener('click', login);
+1183:// ── Activity Panel Toggle ──────────────────────────────────────────────────
+1184:function toggleActivityPanel() {
+1185:  const panel  = document.getElementById('right-panel');
+1186:  const toggle = document.getElementById('panel-toggle');
+1187:  const icon   = document.getElementById('panel-toggle-icon');
+1188:  const open   = panel.classList.toggle('open');
+1189:  toggle.classList.toggle('open', open);
+1190:  icon.innerHTML = open
+1191:    ? '<path d="M4 2L8 6L4 10" stroke="#6C63FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+1192:    : '<path d="M8 2L4 6L8 10" stroke="#6C63FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+1193:}
+1195:// ── Agent Chat ─────────────────────────────────────────────────────────────
+1196:const AGENT_SESSION_KEY = 'axis-agent-session';
+1198:function getSessionId() {
+1199:  let sid = sessionStorage.getItem(AGENT_SESSION_KEY);
+1200:  if (!sid) {
+1201:    sid = 'axis-session-1';
+1202:    sessionStorage.setItem(AGENT_SESSION_KEY, sid);
+1203:  }
+1204:  return sid;
+1205:}
+1207:function detectSubagent(text) {
+1208:  const t = text.toLowerCase();
+1209:  if (/deal|pipeline|stage|won|lost|crm/.test(t))      return 'sales';
+1210:  if (/invoice|revenue|payment|collected/.test(t))      return 'finance';
+1211:  if (/chart|dashboard|trend|analysis/.test(t))         return 'data';
+1212:  return 'orchestrator';
+1213:}
+1215:const AGENT_COLORS     = { sales:'#6C63FF', finance:'#3ECF8E', data:'#00D4FF', orchestrator:'#6C63FF' };
+1216:const AGENT_TAGS       = { sales:'Sales Intelligence', finance:'Finance', data:'Data Analyst', orchestrator:'Orchestrator' };
+1217:const AGENT_TAG_CLASSES = { sales:'tag-sales', finance:'tag-finance', data:'tag-data', orchestrator:'tag-orchestrator' };
+1219:function setSubagentActive(which) {
+1220:  ['sales','finance','data','orchestrator'].forEach(a => {
+1221:    const dot    = document.getElementById('dot-' + a);
+1222:    const status = document.getElementById('status-' + a);
+1223:    const card   = document.getElementById('agent-card-' + a);
+1224:    if (!dot) return;
+1225:    if (a === which) {
+1226:      dot.style.background = AGENT_COLORS[a];
+1227:      status.textContent   = 'Processing';
+1228:      status.style.color   = AGENT_COLORS[a];
+1229:      card.classList.add('active');
+1230:    } else {
+1231:      dot.style.background = '#333';
+1232:      status.textContent   = 'Standby';
+1233:      status.style.color   = '#666';
+1234:      card.classList.remove('active');
+1235:    }
+1236:  });
+1237:}
+1239:function resetSubagents() {
+1240:  ['sales','finance','data','orchestrator'].forEach(a => {
+1241:    const dot    = document.getElementById('dot-' + a);
+1242:    const status = document.getElementById('status-' + a);
+1243:    const card   = document.getElementById('agent-card-' + a);
+1244:    if (!dot) return;
+1245:    const isOrch = a === 'orchestrator';
+1246:    dot.style.background = isOrch ? '#6C63FF' : '#333';
+1247:    status.textContent   = isOrch ? 'Active' : 'Standby';
+1248:    status.style.color   = isOrch ? '#6C63FF' : '#666';
+1249:    card.classList.remove('active');
+1250:  });
+1251:}
+1253:function appendMessage(role, text, agentType) {
+1254:  const msgs = document.getElementById('agent-messages');
+1255:  const div  = document.createElement('div');
+1256:  div.className = role === 'user' ? 'msg-user' : 'msg-agent';
+1257:  if (role === 'agent') {
+1258:    const tagClass = AGENT_TAG_CLASSES[agentType] || 'tag-orchestrator';
+1259:    const tagLabel = AGENT_TAGS[agentType]        || 'Orchestrator';
+1260:    div.innerHTML = `<div class="msg-tag ${tagClass}">${tagLabel}</div><div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
+1261:  } else {
+1262:    div.innerHTML = `<div class="msg-bubble">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+1263:  }
+1264:  msgs.appendChild(div);
+1265:  msgs.scrollTop = msgs.scrollHeight;
+1266:}
+1268:function showTyping() {
+1269:  const msgs = document.getElementById('agent-messages');
+1270:  const div  = document.createElement('div');
+1271:  div.className = 'msg-agent';
+1272:  div.id        = 'typing-indicator';
+1273:  div.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+1274:  msgs.appendChild(div);
+1275:  msgs.scrollTop = msgs.scrollHeight;
+1276:}
+1278:function hideTyping() {
+1279:  const el = document.getElementById('typing-indicator');
+1280:  if (el) el.remove();
+1281:}
+1283:async function sendAgentMessage() {
+1284:  const input = document.getElementById('agent-input');
+1285:  const btn   = document.getElementById('agent-send-btn');
+1286:  const text  = input.value.trim();
+1287:  if (!text) return;
+1289:  input.value    = '';
+1290:  input.disabled = true;
+1291:  btn.disabled   = true;
+1293:  appendMessage('user', text);
+1294:  showTyping();
+1295:  setSubagentActive(detectSubagent(text));
+1297:  try {
+1298:    const res = await fetch('/chat', {
+1299:      method: 'POST',
+1300:      headers: { 'Content-Type': 'application/json' },
+1301:      body: JSON.stringify({ message: text, session_id: getSessionId() }),
+1302:    });
+1303:    const data = await res.json();
+1304:    hideTyping();
+1305:    const reply      = data.response || data.message || JSON.stringify(data);
+1306:    const replyAgent = detectSubagent(reply);
+1307:    appendMessage('agent', reply, replyAgent);
+1308:    setSubagentActive('orchestrator');
+1309:  } catch(e) {
+1310:    hideTyping();
+1311:    appendMessage('agent', 'Error connecting to the agent. Please try again.', 'orchestrator');
+1312:    resetSubagents();
+1313:  } finally {
+1314:    input.disabled = false;
+1315:    btn.disabled   = false;
+1316:    input.focus();
+1317:  }
+1318:}
+1320:async function clearAgentChat() {
+1321:  try {
+1322:    const sid = getSessionId();
+1323:    await fetch('/chat/clear', {
+1324:      method: 'POST',
+1325:      headers: { 'Content-Type': 'application/json' },
+1326:      body: JSON.stringify({ session_id: sid }),
+1327:    });
+1328:    sessionStorage.removeItem(AGENT_SESSION_KEY);
+1329:  } catch(e) {}
+1330:  const msgs = document.getElementById('agent-messages');
+1331:  msgs.innerHTML = '<div class="msg-agent"><div class="msg-tag tag-orchestrator">Orchestrator</div><div class="msg-bubble">Conversation cleared. How can I help you?</div></div>';
+1332:  resetSubagents();
+1333:}
+1335:// Wire agent input Enter key
+1336:document.getElementById('agent-input').addEventListener('keydown', e => {
+1337:  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAgentMessage(); }
+1338:});
+1340:// ── Splash → Login transition ──────────────────────────────────────────────
+1341:(function() {
+1342:  const splash = document.getElementById('splash');
+1343:  setTimeout(() => {
+1344:    splash.classList.add('fade-out');
+1345:    setTimeout(() => {
+1346:      splash.style.display = 'none';
+1347:      const ls = document.getElementById('login-screen');
+1348:      ls.style.display = 'flex';
+1349:    }, 580);
+1350:  }, 2500);
+1351:})();
+1352:</script>
+1353:</body>
+1354:</html>

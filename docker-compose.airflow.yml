@@ -1,0 +1,157 @@
+# docker-compose.airflow.yml
+# Airflow 2.8.1 with CeleryExecutor for the JBM ETL pipeline.
+# airflow-postgres uses port 5433 to avoid conflict with app PostgreSQL on 5432.
+#
+# Usage:
+#   docker-compose -f docker-compose.airflow.yml up -d
+#
+# On Linux, first run:
+#   echo "AIRFLOW_UID=$(id -u)" >> .env
+
+version: '3.8'
+
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:2.8.1
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@airflow-redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    # Packages installed on each container start (development convenience)
+    _PIP_ADDITIONAL_REQUIREMENTS: "pandas==2.1.4 openpyxl==3.1.2 rapidfuzz==3.6.1 python-dateutil==2.8.2 psycopg2-binary==2.9.9 python-dotenv==1.0.1 numpy==1.26.3"
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/plugins:/opt/airflow/plugins
+    - ./data:/opt/airflow/data
+    - ./.env:/opt/airflow/.env
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    airflow-redis:
+      condition: service_healthy
+    airflow-postgres:
+      condition: service_healthy
+
+services:
+
+  # ── Airflow metadata database (separate from app DB on 5432) ──────────────
+  airflow-postgres:
+    image: postgres:13
+    container_name: jbm-airflow-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Redis broker for Celery ────────────────────────────────────────────────
+  airflow-redis:
+    image: redis:7.2-bookworm
+    container_name: jbm-airflow-redis
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── One-time DB init + user creation ──────────────────────────────────────
+  airflow-init:
+    <<: *airflow-common
+    container_name: jbm-airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db init && \
+        airflow users create \
+          --username airflow \
+          --firstname Airflow \
+          --lastname Admin \
+          --role Admin \
+          --email admin@jbm-consulting.tn \
+          --password airflow 2>/dev/null || true && \
+        echo "Airflow initialised."
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+    user: "0:0"
+
+  # ── Web UI on port 8080 ────────────────────────────────────────────────────
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: jbm-airflow-webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  # ── Scheduler (triggers DAG runs) ─────────────────────────────────────────
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: jbm-airflow-scheduler
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  # ── Celery worker (executes tasks) ─────────────────────────────────────────
+  airflow-worker:
+    <<: *airflow-common
+    container_name: jbm-airflow-worker
+    command: celery worker
+    healthcheck:
+      test: ["CMD-SHELL", "airflow celery status 2>/dev/null | grep -q 'OK' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  airflow-postgres-data:

@@ -1,0 +1,2112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXIS — Agentic eXecution &amp; Intelligence System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;font-family:'Inter',sans-serif;color:#F0F0F0;font-size:14px}
+button{cursor:pointer;border:none;outline:none;font-family:'Inter',sans-serif}
+input{outline:none;font-family:'Inter',sans-serif}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:#111111}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+
+/* ── Keyframes ────────────────────────────────────────────────────────────── */
+@keyframes axisGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(108,99,255,.4))}50%{filter:drop-shadow(0 0 24px rgba(108,99,255,.9))}}
+@keyframes fadeOut{to{opacity:0;pointer-events:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse-opacity{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ── Splash ───────────────────────────────────────────────────────────────── */
+#splash{position:fixed;inset:0;z-index:1000;background:#0A0A0A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+#splash .logo-wrap{animation:axisGlow 2s ease-in-out infinite}
+#splash .axis-name{font-size:28px;font-weight:600;letter-spacing:.3em;color:#F0F0F0}
+#splash .axis-sub{font-size:13px;font-weight:300;color:#666666;letter-spacing:.05em}
+#splash.fade-out{animation:fadeOut .6s ease forwards}
+
+/* ── Login ────────────────────────────────────────────────────────────────── */
+#login-screen{position:fixed;inset:0;z-index:900;background:#0A0A0A;display:none;align-items:center;justify-content:center;animation:fadeIn .5s ease}
+.login-card{background:#111111;border:1px solid #1E1E1E;border-radius:16px;padding:48px;width:380px;display:flex;flex-direction:column;align-items:center;gap:28px;box-shadow:0 0 40px rgba(0,0,0,.6)}
+.login-logo{display:flex;flex-direction:column;align-items:center;gap:12px}
+.login-logo .axis-name{font-size:20px;font-weight:600;letter-spacing:.3em;color:#F0F0F0}
+.login-heading{font-size:22px;font-weight:600;color:#F0F0F0;text-align:center}
+.login-fields{width:100%;display:flex;flex-direction:column;gap:14px}
+.login-fields input{width:100%;background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;padding:12px 14px;color:#F0F0F0;font-size:14px;transition:border-color .2s ease}
+.login-fields input:focus{border-color:#6C63FF}
+.login-fields input::placeholder{color:#666666}
+.login-btn{width:100%;background:#6C63FF;color:#F0F0F0;font-size:14px;font-weight:600;padding:13px;border-radius:8px;transition:filter .2s ease}
+.login-btn:hover{filter:brightness(1.15)}
+.login-error{color:#FF4D4D;font-size:13px;display:none}
+
+/* ── App Shell ────────────────────────────────────────────────────────────── */
+#app{display:none;width:100vw;height:100vh;flex-direction:row;overflow:hidden}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+#sidebar{width:240px;flex-shrink:0;background:#111111;border-right:1px solid #1E1E1E;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:24px 20px 20px;border-bottom:1px solid #1E1E1E}
+.sidebar-logo .axis-name{font-size:16px;font-weight:600;letter-spacing:.2em;color:#F0F0F0}
+.sidebar-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:20px;color:#666666;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s ease;border-left:2px solid transparent}
+.nav-item:hover{color:#F0F0F0;background:#1A1A1A}
+.nav-item.active{color:#F0F0F0;background:#1A1A1A;border-left-color:#6C63FF}
+.nav-item svg{flex-shrink:0}
+.sidebar-footer{padding:16px 20px;border-top:1px solid #1E1E1E;display:flex;flex-direction:column;gap:10px}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-dot{width:8px;height:8px;border-radius:50%;background:#3ECF8E;flex-shrink:0}
+.user-name{font-size:13px;color:#F0F0F0;font-weight:500}
+.logout-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#666666;font-size:12px;padding:8px;transition:all .2s ease}
+.logout-btn:hover{color:#FF4D4D;border-color:#FF4D4D}
+
+/* ── Main Wrapper ─────────────────────────────────────────────────────────── */
+#main-wrapper{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-bottom:1px solid #1E1E1E;flex-shrink:0;background:#0A0A0A}
+#page-title{font-size:15px;font-weight:600;color:#F0F0F0}
+.etl-controls{display:flex;align-items:center;gap:10px}
+#etl-trigger-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#F0F0F0;font-size:12px;font-weight:500;padding:7px 14px;transition:all .2s ease}
+#etl-trigger-btn:hover{border-color:#6C63FF;color:#6C63FF}
+.etl-indicator{display:flex;align-items:center;gap:6px}
+.etl-dot{width:8px;height:8px;border-radius:50%;background:#666666;transition:background .3s ease}
+.etl-dot.idle{background:#666666}
+.etl-dot.running{background:#00D4FF;animation:pulse .8s ease-in-out infinite}
+.etl-dot.success{background:#3ECF8E}
+.etl-dot.failed{background:#FF4D4D}
+.etl-label{font-size:12px;color:#666666}
+#content-area{flex:1;overflow-y:auto;padding:24px;background:#0A0A0A}
+
+/* ── Right Panel (collapsible overlay) ───────────────────────────────────── */
+#right-panel{position:fixed;top:0;right:0;width:320px;height:100vh;background:#111111;border-left:1px solid #1E1E1E;display:flex;flex-direction:column;overflow:hidden;z-index:200;transform:translateX(100%);transition:transform .3s ease}
+#right-panel.open{transform:translateX(0)}
+#panel-toggle{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:201;width:32px;height:64px;background:#111111;border:1px solid #1E1E1E;border-right:none;border-left:3px solid #6C63FF;border-radius:8px 0 0 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:right .3s ease}
+#panel-toggle.open{right:320px}
+.panel-header{padding:16px 16px 12px;border-bottom:1px solid #1E1E1E;flex-shrink:0}
+.panel-title{font-size:13px;font-weight:600;color:#F0F0F0;letter-spacing:.03em}
+#activity-feed{flex:1;overflow-y:auto;padding:8px}
+.feed-empty{padding:24px 16px;text-align:center;color:#666666;font-size:13px}
+.feed-item{display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-radius:8px;transition:background .2s ease;animation:slideIn .3s ease}
+.feed-item:hover{background:#1A1A1A}
+.feed-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.feed-dot.add{background:#3ECF8E}
+.feed-dot.update{background:#00D4FF}
+.feed-dot.delete{background:#FF4D4D}
+.feed-dot.etl{background:#6C63FF}
+.feed-content{flex:1;min-width:0}
+.feed-action{font-size:12px;font-weight:500;color:#F0F0F0;text-transform:capitalize}
+.feed-entity{font-size:11px;color:#666666;margin-top:1px}
+.feed-details{font-size:11px;color:#666666;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed-time{font-size:10px;color:#444;flex-shrink:0;margin-top:2px}
+
+/* ── Dashboard Tabs ───────────────────────────────────────────────────────── */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid #1E1E1E;margin-bottom:24px}
+.tab-btn{background:transparent;color:#666666;font-size:13px;font-weight:500;padding:10px 20px;border-bottom:2px solid transparent;transition:all .2s ease;font-family:'Inter',sans-serif}
+.tab-btn:hover{color:#F0F0F0}
+.tab-btn.active{color:#F0F0F0;border-bottom-color:#6C63FF}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ── KPI Grid ─────────────────────────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:24px;margin-bottom:24px}
+.kpi-card{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;padding:20px 20px 16px;box-shadow:0 0 0 1px #1E1E1E;transition:all .2s ease}
+.kpi-card:hover{border-color:#2A2A2A}
+.kpi-label{font-size:11px;font-weight:500;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.kpi-value{font-size:28px;font-weight:700;color:#F0F0F0;line-height:1;margin-bottom:4px}
+.kpi-sub{font-size:11px;color:#666666}
+.kpi-value.positive{color:#3ECF8E}
+.kpi-value.negative{color:#FF4D4D}
+
+/* ── Chart Layout ─────────────────────────────────────────────────────────── */
+.charts-section{display:flex;flex-direction:column;gap:24px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.chart-card{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;padding:20px;box-shadow:0 0 0 1px #1E1E1E;min-height:380px}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.chart-title{font-size:12px;font-weight:600;color:#666666;text-transform:uppercase;letter-spacing:.06em}
+.chart-header .chart-title{margin-bottom:0}
+.fullscreen-btn{background:none;border:none;padding:4px 6px;cursor:pointer;opacity:0.4;transition:opacity .2s ease;border-radius:4px;display:flex;align-items:center}
+.fullscreen-btn:hover{opacity:1;background:#2A2A2A}
+.chart-card.fullscreen{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1000;background:#0A0A0A;border-radius:0;padding:24px;display:flex;flex-direction:column;overflow:hidden}
+.chart-card.fullscreen .chart-container{flex:1;height:auto!important}
+.chart-container{width:100%;height:320px}
+.chart-container.tall{height:360px}
+
+/* ── Agent Chat ──────────────────────────────────────────────────────────── */
+#view-agent{height:100%}
+.agent-layout{display:flex;height:100%;gap:0}
+.agent-chat{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #1E1E1E}
+.agent-chat-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #1E1E1E;flex-shrink:0}
+.agent-chat-title{font-size:14px;font-weight:600;color:#F0F0F0}
+.agent-clear-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:6px;color:#666;font-size:12px;padding:5px 12px;transition:all .2s ease}
+.agent-clear-btn:hover{border-color:#FF4D4D;color:#FF4D4D}
+.agent-messages{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+.msg-user{align-self:flex-end;max-width:70%}
+.msg-agent{align-self:flex-start;max-width:70%}
+.msg-bubble{padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.6;color:#F0F0F0}
+.msg-user .msg-bubble{background:#6C63FF;border-radius:12px 12px 2px 12px}
+.msg-agent .msg-bubble{background:#1A1A1A;border-radius:12px 12px 12px 2px}
+.msg-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-bottom:4px;display:inline-block;letter-spacing:.05em}
+.tag-sales{background:rgba(108,99,255,.2);color:#6C63FF}
+.tag-finance{background:rgba(62,207,142,.2);color:#3ECF8E}
+.tag-data{background:rgba(0,212,255,.2);color:#00D4FF}
+.tag-orchestrator{background:rgba(102,102,102,.2);color:#999}
+.typing-indicator{display:flex;align-items:center;gap:4px;padding:14px 16px;background:#1A1A1A;border-radius:12px 12px 12px 2px;width:fit-content}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:#666;animation:typingBounce .8s ease infinite}
+.typing-dot:nth-child(2){animation-delay:.15s}
+.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.agent-input-area{padding:16px 20px;border-top:1px solid #1E1E1E;background:#111111;display:flex;gap:10px;flex-shrink:0}
+.agent-input{flex:1;background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;padding:10px 14px;color:#F0F0F0;font-size:13px;transition:border-color .2s ease}
+.agent-input:focus{border-color:#6C63FF}
+.agent-input::placeholder{color:#666}
+.agent-send-btn{background:#6C63FF;border-radius:8px;padding:10px 16px;display:flex;align-items:center;justify-content:center;transition:filter .2s ease;flex-shrink:0}
+.agent-send-btn:hover{filter:brightness(1.15)}
+.agent-panel-right{width:280px;flex-shrink:0;padding:20px;overflow-y:auto;background:#0A0A0A}
+.agent-panel-title{font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.subagent-card{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;transition:border-color .3s ease}
+.subagent-card.active{border-color:#6C63FF}
+.subagent-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;transition:background .3s ease}
+.subagent-info{flex:1;min-width:0}
+.subagent-name{font-size:12px;font-weight:600;color:#F0F0F0;margin-bottom:2px}
+.subagent-role{font-size:11px;color:#666;line-height:1.4}
+.subagent-status{font-size:10px;margin-top:4px;font-weight:500}
+
+/* ── pulse-dot (kept for other uses) ─────────────────────────────────────── */
+.pulse-dot{animation:pulse-opacity 2s ease-in-out infinite}
+
+/* ── Activity View ────────────────────────────────────────────────────────── */
+#view-activity{display:none}
+.activity-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.activity-title{font-size:16px;font-weight:600;color:#F0F0F0}
+.filter-bar{display:flex;gap:8px}
+.filter-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#666666;font-size:12px;font-weight:500;padding:6px 14px;transition:all .2s ease}
+.filter-btn:hover{color:#F0F0F0}
+.filter-btn.active{background:#6C63FF22;border-color:#6C63FF;color:#6C63FF}
+.activity-table-wrap{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;overflow:hidden}
+.activity-table{width:100%;border-collapse:collapse}
+.activity-table th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:#666666;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #1E1E1E;background:#111111}
+.activity-table td{padding:11px 16px;font-size:12px;color:#F0F0F0;border-bottom:1px solid #1E1E1E11}
+.activity-table tr:last-child td{border-bottom:none}
+.activity-table tr:hover td{background:#1E1E1E22}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.status-badge.success{background:#3ECF8E22;color:#3ECF8E}
+.status-badge.error{background:#FF4D4D22;color:#FF4D4D}
+.act-type-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px}
+
+/* ── Loading spinner ─────────────────────────────────────────────────────── */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #333;border-top-color:#6C63FF;border-radius:50%;animation:spin .7s linear infinite}
+
+/* ── Responsive tweaks ────────────────────────────────────────────────────── */
+@media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.chart-row{grid-template-columns:1fr}}
+
+/* ── My Charts View ───────────────────────────────────────────────────────── */
+#view-charts{display:none}
+.charts-page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.charts-page-title{font-size:16px;font-weight:600;color:#F0F0F0}
+.charts-clear-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#666666;font-size:12px;font-weight:500;padding:6px 14px;transition:all .2s ease}
+.charts-clear-btn:hover{border-color:#FF4D4D;color:#FF4D4D}
+.charts-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px;color:#444;font-size:13px;text-align:center}
+.charts-empty svg{opacity:.25}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.my-chart-card{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;padding:20px}
+.my-chart-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.my-chart-title{font-size:13px;font-weight:600;color:#F0F0F0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.my-chart-type-badge{flex-shrink:0;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(108,99,255,.2);color:#6C63FF;letter-spacing:.05em;text-transform:uppercase;margin-left:10px}
+.my-chart-container{width:100%;height:300px}
+.my-chart-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.my-chart-time{font-size:11px;color:#444}
+.my-chart-delete-btn{background:none;border:1px solid #1E1E1E;border-radius:6px;color:#666;font-size:11px;padding:4px 10px;transition:all .2s ease}
+.my-chart-delete-btn:hover{border-color:#FF4D4D;color:#FF4D4D}
+.chart-saved-toast{position:fixed;bottom:24px;right:24px;background:#1A1A1A;border:1px solid #6C63FF;border-radius:8px;padding:12px 18px;font-size:13px;color:#F0F0F0;z-index:500;box-shadow:0 4px 24px rgba(0,0,0,.4);animation:slideIn .3s ease;display:none}
+.chart-saved-toast a{color:#6C63FF;text-decoration:none;font-weight:600;cursor:pointer}
+.chart-saved-toast a:hover{text-decoration:underline}
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr}}
+
+/* ── Evaluation View ──────────────────────────────────────────────────────── */
+/* ── Evaluation view ──────────────────────────────────────────────────────── */
+#view-evaluation{display:none}
+
+/* ── User Management View ────────────────────────────────────────────────── */
+#view-users{display:none}
+.users-section{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;overflow:hidden;margin-bottom:24px}
+.users-section-header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid #1E1E1E;background:#111}
+.users-section-title{font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.06em}
+.provision-form{padding:20px;display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:end}
+@media(max-width:900px){.provision-form{grid-template-columns:1fr 1fr}}
+.provision-field{display:flex;flex-direction:column;gap:6px}
+.provision-label{font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.05em}
+.provision-input,.provision-select{background:#111;border:1px solid #2A2A2A;border-radius:8px;color:#F0F0F0;font-size:13px;padding:8px 12px;font-family:'Inter',sans-serif;transition:border-color .2s;cursor:auto}
+.provision-input:focus,.provision-select:focus{outline:none;border-color:#6C63FF}
+.provision-select{cursor:pointer}
+.provision-btn{background:#6C63FF;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;padding:9px 16px;cursor:pointer;white-space:nowrap;transition:background .2s;font-family:'Inter',sans-serif;align-self:end}
+.provision-btn:hover{background:#7C74FF}
+.provision-btn:disabled{opacity:.5;cursor:not-allowed}
+.provision-msg{padding:0 20px 16px;font-size:13px}
+.provision-msg.success{color:#3ECF8E}
+.provision-msg.error{color:#FF4D4D}
+.users-table{width:100%;border-collapse:collapse}
+.users-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #1E1E1E;background:#111;white-space:nowrap}
+.users-table td{padding:9px 14px;font-size:12px;color:#D0D0D0;border-bottom:1px solid #1E1E1E11;vertical-align:middle}
+.users-table tr:last-child td{border-bottom:none}
+.user-delete-btn{background:#1A1A1A;border:1px solid #FF4D4D33;border-radius:6px;color:#FF4D4D;font-size:11px;font-weight:600;padding:3px 10px;cursor:pointer;transition:all .15s}
+.user-delete-btn:hover{background:#FF4D4D22}
+.role-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase}
+.role-badge.admin{color:#6C63FF;background:#6C63FF15}
+.role-badge.user{color:#888;background:#2A2A2A}
+.eval-score-good{color:#3ECF8E}
+.eval-score-mid{color:#F59E0B}
+.eval-score-bad{color:#FF4D4D}
+.verdict-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.verdict-PASS{background:#3ECF8E22;color:#3ECF8E}
+.verdict-PARTIAL{background:#F59E0B22;color:#F59E0B}
+.verdict-FAIL{background:#FF4D4D22;color:#FF4D4D}
+.eval-empty{text-align:center;color:#444;padding:32px;font-size:13px}
+
+/* summary stat cards */
+.eval-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.eval-stat-card{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;padding:18px}
+.eval-stat-label{font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.eval-stat-value{font-size:26px;font-weight:700;color:#F0F0F0;line-height:1}
+
+/* two-column layout */
+.eval-columns{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:1100px){.eval-columns{grid-template-columns:1fr}}
+
+/* conversation panel */
+.eval-panel{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;overflow:hidden}
+.eval-panel-header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid #1E1E1E;background:#111}
+.eval-panel-title{font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.06em}
+.eval-session-item{border-bottom:1px solid #1E1E1E11}
+.eval-session-item:last-child{border-bottom:none}
+.eval-session-hdr{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;transition:background .15s}
+.eval-session-hdr:hover{background:#1E1E1E55}
+.eval-session-id{font-size:12px;font-weight:600;color:#F0F0F0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eval-session-meta{font-size:11px;color:#555;white-space:nowrap}
+.eval-session-caret{font-size:10px;color:#555;transition:transform .2s}
+.eval-session-caret.open{transform:rotate(90deg)}
+.eval-session-body{display:none;background:#111;padding:0 12px 12px}
+.eval-session-body.open{display:block}
+.eval-session-eval-btn{background:#1A1A1A;border:1px solid #6C63FF33;border-radius:6px;color:#6C63FF;font-size:11px;font-weight:600;padding:3px 10px;cursor:pointer;transition:all .15s}
+.eval-session-eval-btn:hover{background:#6C63FF22}
+.eval-session-eval-btn:disabled{opacity:.4;cursor:not-allowed}
+.eval-exchange{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;padding:10px 12px;margin-top:8px}
+.eval-exchange-q{font-size:12px;color:#A0A0A0;margin-bottom:6px;padding:7px 10px;background:#6C63FF11;border-radius:6px;border-left:2px solid #6C63FF}
+.eval-exchange-a{font-size:11px;color:#666;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:8px}
+.eval-exchange-footer{display:flex;align-items:center;justify-content:space-between}
+.eval-score-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600}
+
+/* results table */
+.eval-results-table-wrap{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;overflow:hidden}
+.eval-table{width:100%;border-collapse:collapse}
+.eval-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #1E1E1E;background:#111;white-space:nowrap}
+.eval-table td{padding:9px 14px;font-size:12px;color:#D0D0D0;border-bottom:1px solid #1E1E1E11;vertical-align:top}
+.eval-table tr:last-child td{border-bottom:none}
+
+/* ── Chart expand modal ───────────────────────────────────────────────── */
+#chart-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
+#chart-modal-backdrop.open{display:flex}
+#chart-modal{background:#111;border:1px solid #1E1E1E;border-radius:14px;width:90vw;height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.7)}
+#chart-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #1E1E1E;flex-shrink:0}
+#chart-modal-title{font-size:14px;font-weight:600;color:#F0F0F0}
+#chart-modal-close{background:none;border:none;color:#888;cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;border-radius:6px;transition:color .15s}
+#chart-modal-close:hover{color:#F0F0F0}
+#chart-modal-plot{flex:1;min-height:0;padding:12px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ SPLASH ══════ -->
+<div id="splash">
+  <div class="logo-wrap">
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(45 32 32)"/>
+      <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(-45 32 32)"/>
+    </svg>
+  </div>
+  <span class="axis-name">AXIS</span>
+  <span class="axis-sub">Agentic eXecution &amp; Intelligence System</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ LOGIN ═══════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(45 32 32)"/>
+        <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(-45 32 32)"/>
+      </svg>
+      <span class="axis-name">AXIS</span>
+    </div>
+    <div class="login-heading">Welcome to AXIS</div>
+    <div class="login-fields">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="off">
+      <input type="password" id="login-pass" placeholder="Password" autocomplete="off">
+    </div>
+    <span class="login-error" id="login-error">Invalid credentials</span>
+    <button class="login-btn" id="login-btn">Sign In</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ APP ══════════ -->
+<div id="app">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(45 32 32)"/>
+        <rect x="4" y="27" width="56" height="10" rx="4" fill="#6C63FF" transform="rotate(-45 32 32)"/>
+      </svg>
+      <span class="axis-name">AXIS</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
+        <!-- Grid icon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+          <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+          <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
+          <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
+        </svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-view="agent" onclick="navigate('agent')">
+        <!-- Terminal icon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M4 6l2.5 2L4 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8.5 10H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Agent
+      </div>
+      <div class="nav-item" data-view="activity" onclick="navigate('activity')">
+        <!-- Pulse icon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 8h2.5l2-4 3 8 2-4 1.5 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        Activity
+      </div>
+      <div class="nav-item" data-view="charts" onclick="navigate('charts')">
+        <!-- Bar chart icon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="8" width="3" height="6" rx="1" fill="currentColor"/>
+          <rect x="6" y="5" width="3" height="9" rx="1" fill="currentColor"/>
+          <rect x="11" y="2" width="3" height="12" rx="1" fill="currentColor"/>
+        </svg>
+        Charts
+      </div>
+      <div class="nav-item" data-view="evaluation" onclick="navigate('evaluation')" id="nav-evaluation" style="display:none">
+        <!-- Crosshair icon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M8 2V4M8 12V14M2 8H4M12 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Evaluation
+      </div>
+      <div class="nav-item" data-view="users" onclick="navigate('users')" id="nav-users" style="display:none">
+        <!-- Users icon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M1 13c0-2.485 2.239-4.5 5-4.5h1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <path d="M11 10v4M9 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Users
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-dot"></div>
+        <span class="user-name" id="sidebar-username">admin</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- ─── Main Wrapper ─────────────────────────────────────────────────────── -->
+  <div id="main-wrapper">
+    <!-- Topbar -->
+    <div id="topbar">
+      <span id="page-title">Dashboard</span>
+    </div>
+
+    <!-- Content -->
+    <div id="content-area">
+
+      <!-- ── Dashboard View ─────────────────────────────────────────────── -->
+      <div id="view-dashboard" class="view">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tab-crm-btn" onclick="switchDashTab('crm')">Sales &amp; CRM</button>
+          <button class="tab-btn" id="tab-finance-btn" onclick="switchDashTab('finance')">Finance &amp; Invoicing</button>
+        </div>
+
+        <!-- CRM tab -->
+        <div id="tab-crm" class="tab-content active">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Total Revenue (Paid)</div>
+              <div class="kpi-value" id="crm-kpi-revenue"><span class="spinner"></span></div>
+              <div class="kpi-sub">TND</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Total Deals</div>
+              <div class="kpi-value" id="crm-kpi-deals"><span class="spinner"></span></div>
+              <div class="kpi-sub">all time</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Win Rate</div>
+              <div class="kpi-value positive" id="crm-kpi-winrate"><span class="spinner"></span></div>
+              <div class="kpi-sub">won / closed</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Active Pipeline</div>
+              <div class="kpi-value" id="crm-kpi-pipeline"><span class="spinner"></span></div>
+              <div class="kpi-sub">TND open deals</div>
+            </div>
+          </div>
+
+          <div class="charts-section">
+            <div class="chart-card" id="card-revenue-trend">
+              <div class="chart-header">
+                <div class="chart-title">Monthly Revenue Trend</div>
+                <button class="fullscreen-btn" onclick="toggleFullscreen('card-revenue-trend')" title="Fullscreen">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <div id="chart-revenue-trend" class="chart-container"></div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-card" id="card-win-rate">
+                <div class="chart-header">
+                  <div class="chart-title">Win Rate by Quarter</div>
+                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-win-rate')" title="Fullscreen">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div id="chart-win-rate" class="chart-container"></div>
+              </div>
+              <div class="chart-card" id="card-pipeline">
+                <div class="chart-header">
+                  <div class="chart-title">Pipeline by Stage</div>
+                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-pipeline')" title="Fullscreen">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div id="chart-pipeline" class="chart-container"></div>
+              </div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-card" id="card-top-clients">
+                <div class="chart-header">
+                  <div class="chart-title">Top 10 Clients by Won Deal Value</div>
+                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-top-clients')" title="Fullscreen">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div id="chart-top-clients" class="chart-container tall"></div>
+              </div>
+              <div class="chart-card" id="card-new-vs-closed">
+                <div class="chart-header">
+                  <div class="chart-title">New Deals vs Closed Deals</div>
+                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-new-vs-closed')" title="Fullscreen">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div id="chart-new-vs-closed" class="chart-container tall"></div>
+              </div>
+            </div>
+            <div class="chart-card" id="card-deal-size">
+              <div class="chart-header">
+                <div class="chart-title">Deal Size Distribution</div>
+                <button class="fullscreen-btn" onclick="toggleFullscreen('card-deal-size')" title="Fullscreen">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <div id="chart-deal-size" class="chart-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Finance tab -->
+        <div id="tab-finance" class="tab-content">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Total Collected</div>
+              <div class="kpi-value positive" id="fin-kpi-collected"><span class="spinner"></span></div>
+              <div class="kpi-sub">TND paid</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Total Pending</div>
+              <div class="kpi-value" id="fin-kpi-pending"><span class="spinner"></span></div>
+              <div class="kpi-sub">TND awaiting</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Total Overdue</div>
+              <div class="kpi-value negative" id="fin-kpi-overdue"><span class="spinner"></span></div>
+              <div class="kpi-sub">TND past due</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Collection Rate</div>
+              <div class="kpi-value positive" id="fin-kpi-rate"><span class="spinner"></span></div>
+              <div class="kpi-sub">paid / total</div>
+            </div>
+          </div>
+
+          <div class="charts-section">
+            <div class="chart-card" id="card-rev-year">
+              <div class="chart-header">
+                <div class="chart-title">Revenue by Year</div>
+                <button class="fullscreen-btn" onclick="toggleFullscreen('card-rev-year')" title="Fullscreen">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <div id="chart-rev-year" class="chart-container"></div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-card" id="card-cumulative">
+                <div class="chart-header">
+                  <div class="chart-title">Cumulative Revenue</div>
+                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-cumulative')" title="Fullscreen">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div id="chart-cumulative" class="chart-container"></div>
+              </div>
+              <div class="chart-card" id="card-payment-delay">
+                <div class="chart-header">
+                  <div class="chart-title">Payment Delay Distribution</div>
+                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-payment-delay')" title="Fullscreen">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div id="chart-payment-delay" class="chart-container"></div>
+              </div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-card" id="card-status-dist">
+                <div class="chart-header">
+                  <div class="chart-title">Invoice Status Distribution</div>
+                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-status-dist')" title="Fullscreen">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div id="chart-status-dist" class="chart-container"></div>
+              </div>
+              <div class="chart-card" id="card-fin-top-clients">
+                <div class="chart-header">
+                  <div class="chart-title">Top 10 Clients by Invoice Value</div>
+                  <button class="fullscreen-btn" onclick="toggleFullscreen('card-fin-top-clients')" title="Fullscreen">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div id="chart-fin-top-clients" class="chart-container"></div>
+              </div>
+            </div>
+            <div class="chart-card" id="card-monthly-activity">
+              <div class="chart-header">
+                <div class="chart-title">Monthly Invoicing Activity</div>
+                <button class="fullscreen-btn" onclick="toggleFullscreen('card-monthly-activity')" title="Fullscreen">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <div id="chart-monthly-activity" class="chart-container"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Agent View ──────────────────────────────────────────────────── -->
+      <div id="view-agent" class="view">
+        <div class="agent-layout">
+          <!-- Chat column -->
+          <div class="agent-chat">
+            <div class="agent-chat-header">
+              <div class="agent-chat-title">AXIS Agent</div>
+              <button class="agent-clear-btn" onclick="clearAgentChat()">Clear</button>
+            </div>
+            <div class="agent-messages" id="agent-messages">
+              <div class="msg-agent">
+                <div class="msg-tag tag-orchestrator">Orchestrator</div>
+                <div class="msg-bubble">Hello! I'm the AXIS Agent. I can help you analyze sales pipeline, invoicing data, or answer questions about your ERP data. What would you like to know?</div>
+              </div>
+            </div>
+            <div class="agent-input-area">
+              <input class="agent-input" id="agent-input" type="text" placeholder="Ask about deals, revenue, clients..." />
+              <button class="agent-send-btn" id="agent-send-btn" onclick="sendAgentMessage()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L14 2L8 14L7 9L2 8Z" fill="#F0F0F0"/></svg>
+              </button>
+            </div>
+          </div>
+          <!-- Sub-agent panel -->
+          <div class="agent-panel-right">
+            <div class="agent-panel-title">Active Agents</div>
+            <div class="subagent-card" id="agent-card-sales">
+              <div class="subagent-dot" id="dot-sales" style="background:#333"></div>
+              <div class="subagent-info">
+                <div class="subagent-name">Sales Intelligence</div>
+                <div class="subagent-role">Deals, pipeline, stages &amp; CRM analysis</div>
+                <div class="subagent-status" id="status-sales" style="color:#666">Standby</div>
+              </div>
+            </div>
+            <div class="subagent-card" id="agent-card-finance">
+              <div class="subagent-dot" id="dot-finance" style="background:#333"></div>
+              <div class="subagent-info">
+                <div class="subagent-name">Finance</div>
+                <div class="subagent-role">Invoices, revenue &amp; payment tracking</div>
+                <div class="subagent-status" id="status-finance" style="color:#666">Standby</div>
+              </div>
+            </div>
+            <div class="subagent-card" id="agent-card-data">
+              <div class="subagent-dot" id="dot-data" style="background:#333"></div>
+              <div class="subagent-info">
+                <div class="subagent-name">Data Analyst</div>
+                <div class="subagent-role">Charts, trends &amp; dashboard insights</div>
+                <div class="subagent-status" id="status-data" style="color:#666">Standby</div>
+              </div>
+            </div>
+            <div class="subagent-card" id="agent-card-orchestrator">
+              <div class="subagent-dot" id="dot-orchestrator" style="background:#6C63FF"></div>
+              <div class="subagent-info">
+                <div class="subagent-name">Orchestrator</div>
+                <div class="subagent-role">Routes queries to specialist agents</div>
+                <div class="subagent-status" id="status-orchestrator" style="color:#6C63FF">Active</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Activity View ───────────────────────────────────────────────── -->
+      <div id="view-activity" class="view">
+        <div class="activity-header">
+          <div class="activity-title">System Activity Log</div>
+          <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all" onclick="filterActivity('all')">All</button>
+            <button class="filter-btn" data-filter="add" onclick="filterActivity('add')">Additions</button>
+            <button class="filter-btn" data-filter="update" onclick="filterActivity('update')">Updates</button>
+            <button class="filter-btn" data-filter="delete" onclick="filterActivity('delete')">Deletions</button>
+            <button class="filter-btn" data-filter="etl" onclick="filterActivity('etl')">ETL</button>
+          </div>
+        </div>
+        <div class="activity-table-wrap">
+          <table class="activity-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>Details</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="activity-table-body">
+              <tr><td colspan="5" style="text-align:center;color:#666;padding:32px">Loading activity log...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── My Charts View ──────────────────────────────────────────────── -->
+      <div id="view-charts" class="view">
+        <div class="charts-page-header">
+          <div class="charts-page-title">My Charts</div>
+          <button class="charts-clear-btn" onclick="clearAllCharts()">Clear All</button>
+        </div>
+        <div id="charts-grid-container">
+          <div class="charts-empty" id="charts-empty-state">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="28" width="8" height="16" rx="2" fill="#6C63FF"/>
+              <rect x="20" y="18" width="8" height="26" rx="2" fill="#6C63FF"/>
+              <rect x="36" y="8" width="8" height="36" rx="2" fill="#6C63FF"/>
+            </svg>
+            <div>No charts generated yet.</div>
+            <div style="color:#555;font-size:12px">Ask the AXIS Agent to create one — try:<br><em style="color:#6C63FF">"create a bar chart of deal count by stage from fact_deals"</em></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Evaluation View ───────────────────────────────────────────────── -->
+      <div id="view-evaluation" class="view">
+
+        <!-- Page title -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <span style="font-size:16px;font-weight:600;color:#F0F0F0">Agent Evaluation</span>
+          <button onclick="loadConversations();loadEvaluationResults()" style="background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#888;font-size:12px;padding:6px 14px;cursor:pointer">Refresh</button>
+        </div>
+
+        <!-- Summary stat cards -->
+        <div class="eval-stat-row" id="eval-stat-row">
+          <div class="eval-stat-card">
+            <div class="eval-stat-label">Total Evaluated</div>
+            <div class="eval-stat-value" id="eval-stat-total">0</div>
+          </div>
+          <div class="eval-stat-card">
+            <div class="eval-stat-label">Average Score</div>
+            <div class="eval-stat-value" id="eval-stat-avg">—</div>
+          </div>
+          <div class="eval-stat-card">
+            <div class="eval-stat-label">Pass Rate</div>
+            <div class="eval-stat-value" id="eval-stat-pass">—</div>
+          </div>
+        </div>
+
+        <!-- Two-column layout -->
+        <div class="eval-columns">
+
+          <!-- LEFT: Recent conversations -->
+          <div class="eval-panel">
+            <div class="eval-panel-header">
+              <span class="eval-panel-title">Recent Conversations</span>
+              <span style="font-size:11px;color:#444" id="conv-count"></span>
+            </div>
+            <div id="eval-conv-list"><div class="eval-empty">Loading conversations…</div></div>
+          </div>
+
+          <!-- RIGHT: Evaluation results -->
+          <div class="eval-results-table-wrap">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid #1E1E1E;background:#111">
+              <span style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.06em">Evaluation Results</span>
+            </div>
+            <table class="eval-table">
+              <thead>
+                <tr>
+                  <th>Question</th>
+                  <th>Response</th>
+                  <th>Score</th>
+                  <th>Verdict</th>
+                  <th>Reasoning</th>
+                </tr>
+              </thead>
+              <tbody id="eval-results-tbody"><tr><td colspan="5" class="eval-empty">No evaluations yet</td></tr></tbody>
+            </table>
+          </div>
+
+        </div><!-- /eval-columns -->
+
+      </div><!-- /view-evaluation -->
+
+      <!-- ── User Management View ──────────────────────────────────────── -->
+      <div id="view-users" class="view">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <span style="font-size:16px;font-weight:600;color:#F0F0F0">User Management</span>
+          <button onclick="loadUsers()" style="background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#888;font-size:12px;padding:6px 14px;cursor:pointer">Refresh</button>
+        </div>
+
+        <!-- Provision form -->
+        <div class="users-section">
+          <div class="users-section-header">
+            <span class="users-section-title">Provision New User</span>
+          </div>
+          <div class="provision-form">
+            <div class="provision-field">
+              <label class="provision-label">Email</label>
+              <input id="prov-email" class="provision-input" type="email" placeholder="user@example.com">
+            </div>
+            <div class="provision-field">
+              <label class="provision-label">Full Name</label>
+              <input id="prov-name" class="provision-input" type="text" placeholder="Ahmed Ben Ali">
+            </div>
+            <div class="provision-field">
+              <label class="provision-label">Role</label>
+              <select id="prov-role" class="provision-select">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button class="provision-btn" onclick="provisionUser()" id="prov-btn">Create &amp; Send Credentials</button>
+          </div>
+          <div id="prov-msg" class="provision-msg" style="display:none"></div>
+        </div>
+
+        <!-- Users table -->
+        <div class="users-section">
+          <div class="users-section-header">
+            <span class="users-section-title">Current Users</span>
+            <span id="users-count" style="font-size:11px;color:#444"></span>
+          </div>
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Role</th>
+                <th>Created</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="6" style="text-align:center;color:#444;padding:32px;font-size:13px">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- /view-users -->
+
+    </div><!-- /content-area -->
+  </div><!-- /main-wrapper -->
+
+  <!-- ─── Panel Toggle Button ────────────────────────────────────────────────── -->
+  <button id="panel-toggle" onclick="toggleActivityPanel()" title="Toggle Activity Panel">
+    <svg id="panel-toggle-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M8 2L4 6L8 10" stroke="#6C63FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <!-- ─── Right Panel (overlay) ───────────────────────────────────────────── -->
+  <aside id="right-panel">
+    <div class="panel-header">
+      <div class="panel-title">Agent Activity</div>
+    </div>
+    <div id="activity-feed">
+      <div class="feed-empty">No recent activity</div>
+    </div>
+  </aside>
+
+</div><!-- /app -->
+
+<!-- Chart saved toast notification -->
+<div class="chart-saved-toast" id="chart-saved-toast">
+  Chart saved — <a onclick="navigate('charts')">view in My Charts</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ JAVASCRIPT ═══════════ -->
+<script>
+'use strict';
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const COLORS = {
+  indigo:  '#6C63FF',
+  cyan:    '#00D4FF',
+  green:   '#3ECF8E',
+  red:     '#FF4D4D',
+  text:    '#F0F0F0',
+  muted:   '#666666',
+  grid:    '#1E1E1E',
+};
+
+const PLOTLY_BASE = {
+  paper_bgcolor: 'transparent',
+  plot_bgcolor:  'transparent',
+  font: { color: COLORS.text, family: 'Inter, sans-serif', size: 11 },
+  margin: { l: 80, r: 30, t: 40, b: 60, pad: 0 },
+  xaxis: { gridcolor: COLORS.grid, linecolor: COLORS.grid, zerolinecolor: COLORS.grid, tickfont: {size: 11}, automargin: true },
+  yaxis: { gridcolor: COLORS.grid, linecolor: COLORS.grid, zerolinecolor: COLORS.grid, tickfont: {size: 11}, automargin: true },
+  legend: { bgcolor: 'transparent', bordercolor: COLORS.grid },
+  hovermode: 'x unified',
+};
+
+const PLOTLY_CFG = { displayModeBar: false, responsive: true };
+
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  view:         'dashboard',
+  dashTab:      'crm',
+  user:         null,
+  role:         null,
+  fullName:     null,
+  etlStatus:    'idle',
+  etlPollTimer: null,
+  feedPollTimer: null,
+  activityFilter: 'all',
+  activityData:  [],
+  feedData:      [],
+  crmLoaded:     false,
+  finLoaded:     false,
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return Number(n).toLocaleString('en-US', { maximumFractionDigits: 1 });
+}
+
+function fmtTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+       + ' ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+async function apiFetch(url, opts = {}) {
+  const token = sessionStorage.getItem('axis_token');
+  const headers = Object.assign(
+    token ? {'Authorization': `Bearer ${token}`} : {},
+    opts.headers || {}
+  );
+  const r = await fetch(url, Object.assign({}, opts, {headers}));
+  if (r.status === 401) { logout(); return null; }
+  if (!r.ok) throw new Error(`${url} → ${r.status}`);
+  return r.json();
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+async function login() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: u, password: p}),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      err.textContent = data.detail || 'Invalid credentials';
+      err.style.display = 'block';
+      return;
+    }
+    const data = await res.json();
+    sessionStorage.setItem('axis_token', data.token);
+    state.user     = data.username;
+    state.role     = data.role;
+    state.fullName = data.full_name;
+    err.style.display = 'none';
+    document.getElementById('sidebar-username').textContent = data.full_name || data.username;
+    applyRBAC();
+    const ls = document.getElementById('login-screen');
+    ls.style.animation = 'fadeOut .5s ease forwards';
+    setTimeout(() => {
+      ls.style.display = 'none';
+      const app = document.getElementById('app');
+      app.style.display = 'flex';
+      app.style.animation = 'fadeIn .5s ease';
+      navigate('dashboard');
+      startPolling();
+    }, 480);
+  } catch(e) {
+    err.textContent = 'Connection error';
+    err.style.display = 'block';
+  }
+}
+
+function applyRBAC() {
+  const isAdmin = state.role === 'admin';
+  // ETL controls: admin only
+  const etlBtn = document.getElementById('etl-trigger-btn');
+  if (etlBtn) etlBtn.style.display = isAdmin ? '' : 'none';
+  // Activity + Evaluation nav items: admin only
+  const actNav = document.querySelector('.nav-item[data-view="activity"]');
+  if (actNav) actNav.style.display = isAdmin ? '' : 'none';
+  const evalNav = document.getElementById('nav-evaluation');
+  if (evalNav) evalNav.style.display = isAdmin ? '' : 'none';
+  const usersNav = document.getElementById('nav-users');
+  if (usersNav) usersNav.style.display = isAdmin ? '' : 'none';
+  // Activity table header: add Username column for admin
+  const headerRow = document.querySelector('#view-activity thead tr');
+  if (headerRow) {
+    const existing = headerRow.querySelector('.th-username');
+    if (isAdmin && !existing) {
+      const th = document.createElement('th');
+      th.className = 'th-username';
+      th.textContent = 'User';
+      headerRow.appendChild(th);
+    } else if (!isAdmin && existing) {
+      existing.remove();
+    }
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('axis_token');
+  state.user     = null;
+  state.role     = null;
+  state.fullName = null;
+  stopPolling();
+  state.crmLoaded = false;
+  state.finLoaded = false;
+  const app = document.getElementById('app');
+  app.style.animation = 'fadeOut .4s ease forwards';
+  setTimeout(() => {
+    app.style.display = 'none';
+    app.style.animation = '';
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pass').value = '';
+    const ls = document.getElementById('login-screen');
+    ls.style.display = 'flex';
+    ls.style.animation = 'fadeIn .5s ease';
+  }, 380);
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+const VIEW_TITLES = { dashboard: 'Dashboard', agent: 'Agent', activity: 'Activity Log', charts: 'My Charts', evaluation: 'Evaluation', users: 'User Management' };
+
+function navigate(view) {
+  state.view = view;
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.view === view);
+  });
+  document.querySelectorAll('#content-area .view').forEach(el => {
+    el.style.display = 'none';
+  });
+  const vEl = document.getElementById('view-' + view);
+  if (vEl) {
+    vEl.style.display = view === 'agent' ? 'flex' : 'block';
+    vEl.style.animation = 'fadeIn .3s ease';
+  }
+  // Agent view needs full height — remove content-area padding
+  document.getElementById('content-area').style.padding = view === 'agent' ? '0' : '24px';
+  document.getElementById('page-title').textContent = VIEW_TITLES[view] || view;
+  if (view === 'dashboard') {
+    switchDashTab(state.dashTab, false);
+  } else if (view === 'activity') {
+    renderActivityTable();
+  } else if (view === 'charts') {
+    setTimeout(() => loadCharts(), 50);
+  } else if (view === 'evaluation') {
+    loadEvaluationResults();
+    loadConversations();
+  } else if (view === 'users') {
+    loadUsers();
+  }
+}
+
+function switchDashTab(tab, load = true) {
+  state.dashTab = tab;
+  document.getElementById('tab-crm-btn').classList.toggle('active', tab === 'crm');
+  document.getElementById('tab-finance-btn').classList.toggle('active', tab === 'finance');
+  document.getElementById('tab-crm').classList.toggle('active', tab === 'crm');
+  document.getElementById('tab-finance').classList.toggle('active', tab === 'finance');
+  if (tab === 'crm' && !state.crmLoaded)     loadCRM();
+  if (tab === 'finance' && !state.finLoaded) loadFinance();
+}
+
+// ── ETL ────────────────────────────────────────────────────────────────────
+async function triggerETL() {
+  const btn = document.getElementById('etl-trigger-btn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  try {
+    const token = sessionStorage.getItem('axis_token');
+    await fetch('/api/etl/trigger', {
+      method: 'POST',
+      headers: token ? {'Authorization': `Bearer ${token}`} : {},
+    });
+    updateETLDot('running');
+  } catch(e) { console.error(e); }
+}
+
+function updateETLDot(status) {
+  state.etlStatus = status;
+  const dot   = document.getElementById('etl-dot');
+  const label = document.getElementById('etl-label');
+  const btn   = document.getElementById('etl-trigger-btn');
+  if (dot) dot.className = 'etl-dot ' + status;
+  if (label) label.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+  if (btn && status !== 'running') {
+    btn.disabled = false;
+    btn.textContent = 'Run ETL';
+  }
+}
+
+async function pollETL() {
+  try {
+    const d = await apiFetch('/api/etl/status');
+    updateETLDot(d.status || 'idle');
+  } catch(e) {}
+}
+
+// ── Activity Feed (right panel) ────────────────────────────────────────────
+const DOT_CLASS = { add: 'add', update: 'update', delete: 'delete', etl: 'etl' };
+
+async function pollFeed() {
+  try {
+    const rows = await apiFetch('/api/activity/feed');
+    state.activityData = rows;
+    renderFeed(rows);
+    if (state.view === 'activity') renderActivityTable();
+  } catch(e) {}
+}
+
+function renderFeed(rows) {
+  const el = document.getElementById('activity-feed');
+  if (!rows || rows.length === 0) {
+    el.innerHTML = '<div class="feed-empty">No recent activity</div>';
+    return;
+  }
+  el.innerHTML = rows.slice(0, 20).map(r => {
+    const dc = DOT_CLASS[r.action_type] || 'update';
+    return `
+      <div class="feed-item">
+        <div class="feed-dot ${dc}"></div>
+        <div class="feed-content">
+          <div class="feed-action">${r.action_type || '—'}</div>
+          <div class="feed-entity">${r.entity || ''}</div>
+          <div class="feed-details" title="${r.details || ''}">${r.details || ''}</div>
+        </div>
+        <div class="feed-time">${fmtTime(r.timestamp)}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── Activity Table ─────────────────────────────────────────────────────────
+function filterActivity(f) {
+  state.activityFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  renderActivityTable();
+}
+
+function renderActivityTable() {
+  const rows = state.activityData;
+  const f    = state.activityFilter;
+  const tbody = document.getElementById('activity-table-body');
+  const isAdmin = state.role === 'admin';
+  const cols = isAdmin ? 6 : 5;
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#666;padding:32px">No activity recorded yet</td></tr>`;
+    return;
+  }
+  const filtered = f === 'all' ? rows : rows.filter(r => r.action_type === f);
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#666;padding:32px">No entries matching this filter</td></tr>`;
+    return;
+  }
+  const dotColors = { add:'#3ECF8E', update:'#00D4FF', delete:'#FF4D4D', etl:'#6C63FF' };
+  tbody.innerHTML = filtered.map(r => {
+    const dc = dotColors[r.action_type] || COLORS.muted;
+    const sc = r.status === 'error' ? 'error' : 'success';
+    const userCell = isAdmin ? `<td style="color:#888">${r.username || '—'}</td>` : '';
+    return `<tr>
+      <td style="color:#666;white-space:nowrap">${fmtTime(r.timestamp)}</td>
+      <td><span class="act-type-dot" style="background:${dc}"></span>${r.action_type || '—'}</td>
+      <td>${r.entity || '—'}</td>
+      <td style="color:#666;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.details || '—'}</td>
+      <td><span class="status-badge ${sc}">${r.status || '—'}</span></td>
+      ${userCell}
+    </tr>`;
+  }).join('');
+}
+
+// ── Polling control ────────────────────────────────────────────────────────
+function startPolling() {
+  pollFeed();
+  pollETL();
+  state.feedPollTimer = setInterval(pollFeed, 5000);
+  state.etlPollTimer  = setInterval(pollETL, 3000);
+}
+
+function stopPolling() {
+  clearInterval(state.feedPollTimer);
+  clearInterval(state.etlPollTimer);
+}
+
+// ── CRM Charts ─────────────────────────────────────────────────────────────
+async function loadCRM() {
+  state.crmLoaded = true;
+  try {
+    const [kpis, trend, wr, pipeline, clients, nvc, sizes] = await Promise.all([
+      apiFetch('/api/crm/kpis'),
+      apiFetch('/api/crm/revenue-trend'),
+      apiFetch('/api/crm/win-rate'),
+      apiFetch('/api/crm/pipeline-stage'),
+      apiFetch('/api/crm/top-clients'),
+      apiFetch('/api/crm/new-vs-closed'),
+      apiFetch('/api/crm/deal-size'),
+    ]);
+    renderCRMKPIs(kpis);
+    renderRevenueTrend(trend);
+    renderWinRate(wr);
+    renderPipeline(pipeline);
+    renderTopClients(clients);
+    renderNewVsClosed(nvc);
+    renderDealSize(sizes);
+  } catch(e) {
+    console.error('CRM load error:', e);
+    state.crmLoaded = false;
+  }
+}
+
+function renderCRMKPIs(d) {
+  document.getElementById('crm-kpi-revenue').textContent  = fmt(d.total_revenue);
+  document.getElementById('crm-kpi-deals').textContent    = fmt(d.total_deals);
+  document.getElementById('crm-kpi-winrate').textContent  = (d.win_rate || 0).toFixed(1) + '%';
+  document.getElementById('crm-kpi-pipeline').textContent = fmt(d.active_pipeline);
+}
+
+function renderRevenueTrend(rows) {
+  if (!rows.length) return;
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Month', type: 'date', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Revenue (TND)', tickfont: {size: 11}, automargin: true }),
+    margin: { l: 80, r: 30, t: 40, b: 60 },
+  });
+  Plotly.newPlot('chart-revenue-trend', [{
+    x: rows.map(r => r.date), y: rows.map(r => r.revenue),
+    type: 'scatter', mode: 'lines', name: 'Revenue',
+    line: { color: COLORS.indigo, width: 2.5 },
+    fill: 'tozeroy', fillcolor: 'rgba(108,99,255,0.1)',
+    hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>',
+  }], layout, PLOTLY_CFG);
+}
+
+function renderWinRate(rows) {
+  if (!rows.length) return;
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Quarter', type: 'category', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Win Rate (%)', range: [0, 100], tickfont: {size: 11}, automargin: true }),
+    margin: { l: 80, r: 30, t: 40, b: 60 },
+    showlegend: false,
+  });
+  Plotly.newPlot('chart-win-rate', [{
+    x: rows.map(r => r.quarter), y: rows.map(r => r.win_rate),
+    type: 'bar', name: 'Win Rate',
+    marker: { color: rows.map(r => r.win_rate >= 40 ? COLORS.green : COLORS.indigo) },
+    text: rows.map(r => r.win_rate.toFixed(1) + '%'),
+    textposition: 'outside',
+    hovertemplate: '%{x}<br>%{y:.1f}%<extra></extra>',
+  }], layout, PLOTLY_CFG);
+}
+
+function renderPipeline(rows) {
+  if (!rows.length) return;
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    funnelmode: 'stack',
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { type: 'category', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { tickfont: {size: 11}, automargin: true }),
+    margin: { l: 80, r: 30, t: 40, b: 60 },
+  });
+  Plotly.newPlot('chart-pipeline', [{
+    type: 'funnel',
+    y: rows.map(r => r.stage),
+    x: rows.map(r => r.deal_count),
+    textinfo: 'value',
+    marker: { color: COLORS.indigo },
+    connector: { line: { color: COLORS.grid, width: 1 } },
+    hovertemplate: '%{label}: %{value:,}<extra></extra>',
+  }], layout, PLOTLY_CFG);
+}
+
+function renderTopClients(rows) {
+  if (!rows.length) return;
+  const sorted = [...rows].sort((a,b) => a.total_value - b.total_value);
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Value (TND)', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { type: 'category', tickfont: {size: 11}, automargin: true }),
+    margin: { l: 220, r: 120, t: 40, b: 60 },
+    showlegend: false,
+  });
+  Plotly.newPlot('chart-top-clients', [{
+    type: 'bar', orientation: 'h',
+    x: sorted.map(r => r.total_value),
+    y: sorted.map(r => r.company_name),
+    marker: { color: COLORS.green },
+    text: sorted.map(r => fmt(r.total_value) + ' TND'),
+    textposition: 'outside',
+    hovertemplate: '%{y}<br>%{x:,.0f} TND<extra></extra>',
+  }], layout, PLOTLY_CFG);
+}
+
+function renderNewVsClosed(data) {
+  const newDeals    = data.new_deals    || [];
+  const closedDeals = data.closed_deals || [];
+  if (!newDeals.length && !closedDeals.length) return;
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Month', type: 'date', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Count', tickfont: {size: 11}, automargin: true }),
+    margin: { l: 80, r: 30, t: 40, b: 60 },
+  });
+  Plotly.newPlot('chart-new-vs-closed', [
+    {
+      x: newDeals.map(r => r.month), y: newDeals.map(r => r.count),
+      type: 'scatter', mode: 'lines', name: 'New Deals',
+      line: { color: COLORS.indigo, width: 2 },
+      hovertemplate: '%{x}<br>%{y:,.0f}<extra></extra>',
+    },
+    {
+      x: closedDeals.map(r => r.month), y: closedDeals.map(r => r.count),
+      type: 'scatter', mode: 'lines', name: 'Closed Deals',
+      line: { color: COLORS.cyan, width: 2 },
+      hovertemplate: '%{x}<br>%{y:,.0f}<extra></extra>',
+    },
+  ], layout, PLOTLY_CFG);
+}
+
+function renderDealSize(rows) {
+  if (!rows.length) return;
+  const palette = [COLORS.indigo, COLORS.green, COLORS.cyan, COLORS.red];
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    margin: { l: 16, r: 16, t: 32, b: 16 },
+    legend: { bgcolor: 'transparent', orientation: 'h', y: -0.1 },
+  });
+  Plotly.newPlot('chart-deal-size', [{
+    type: 'pie', hole: 0.38,
+    labels: rows.map(r => r.deal_size_category),
+    values: rows.map(r => r.deal_count),
+    marker: { colors: palette },
+    textinfo: 'percent+label',
+    textfont: { color: COLORS.text },
+  }], layout, PLOTLY_CFG);
+}
+
+// ── Finance Charts ─────────────────────────────────────────────────────────
+async function loadFinance() {
+  state.finLoaded = true;
+  try {
+    const [kpis, revYear, cum, delay, statusDist, clients, monthly] = await Promise.all([
+      apiFetch('/api/finance/kpis'),
+      apiFetch('/api/finance/revenue-year'),
+      apiFetch('/api/finance/cumulative'),
+      apiFetch('/api/finance/payment-delay'),
+      apiFetch('/api/finance/status-dist'),
+      apiFetch('/api/finance/top-clients'),
+      apiFetch('/api/finance/monthly'),
+    ]);
+    renderFinanceKPIs(kpis);
+    renderRevYear(revYear);
+    renderCumulative(cum);
+    renderPaymentDelay(delay);
+    renderStatusDist(statusDist);
+    renderFinTopClients(clients);
+    renderMonthly(monthly);
+  } catch(e) {
+    console.error('Finance load error:', e);
+    state.finLoaded = false;
+  }
+}
+
+function renderFinanceKPIs(d) {
+  document.getElementById('fin-kpi-collected').textContent = fmt(d.collected);
+  document.getElementById('fin-kpi-pending').textContent   = fmt(d.pending);
+  document.getElementById('fin-kpi-overdue').textContent   = fmt(d.overdue);
+  document.getElementById('fin-kpi-rate').textContent      = (d.collection_rate || 0).toFixed(1) + '%';
+}
+
+function renderRevYear(rows) {
+  if (!rows.length) return;
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    barmode: 'group',
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Year', type: 'category', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Amount (TND)', tickfont: {size: 11}, automargin: true }),
+    margin: { l: 80, r: 30, t: 40, b: 60 },
+  });
+  Plotly.newPlot('chart-rev-year', [
+    { name: 'Collected', x: rows.map(r=>String(r.year)), y: rows.map(r=>r.collected), type:'bar', marker:{color:COLORS.green},  hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>' },
+    { name: 'Pending',   x: rows.map(r=>String(r.year)), y: rows.map(r=>r.pending),   type:'bar', marker:{color:COLORS.indigo}, hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>' },
+    { name: 'Overdue',   x: rows.map(r=>String(r.year)), y: rows.map(r=>r.overdue),   type:'bar', marker:{color:COLORS.red},    hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>' },
+  ], layout, PLOTLY_CFG);
+}
+
+function renderCumulative(rows) {
+  if (!rows.length) return;
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Month', type: 'date', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Cumulative Revenue (TND)', tickfont: {size: 11}, automargin: true }),
+    margin: { l: 80, r: 30, t: 40, b: 60 },
+  });
+  Plotly.newPlot('chart-cumulative', [{
+    x: rows.map(r=>r.date), y: rows.map(r=>r.cumulative),
+    type:'scatter', mode:'lines', name:'Cumulative',
+    line: { color: COLORS.green, width: 2.5 },
+    fill: 'tozeroy', fillcolor: 'rgba(62,207,142,0.1)',
+    hovertemplate: '%{x}<br>%{y:,.0f} TND<extra></extra>',
+  }], layout, PLOTLY_CFG);
+}
+
+function renderPaymentDelay(rows) {
+  if (!rows.length) return;
+  const ORDER = ['On Time','Late 1-30 days','Late 31-60 days','Late 60+ days'];
+  const colorMap = {
+    'On Time':        COLORS.green,
+    'Late 1-30 days': COLORS.indigo,
+    'Late 31-60 days':COLORS.cyan,
+    'Late 60+ days':  COLORS.red,
+  };
+  const sorted = ORDER.map(cat => rows.find(r=>r.delay_category===cat)).filter(Boolean);
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: '', type: 'category', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Invoice Count', tickfont: {size: 11}, automargin: true }),
+    margin: { l: 80, r: 30, t: 40, b: 60 },
+    showlegend: false,
+  });
+  Plotly.newPlot('chart-payment-delay', [{
+    type: 'bar',
+    x: sorted.map(r=>r.delay_category),
+    y: sorted.map(r=>r.count),
+    marker: { color: sorted.map(r=>colorMap[r.delay_category]||COLORS.indigo) },
+    text: sorted.map(r=>r.count),
+    textposition: 'outside',
+    hovertemplate: '%{x}<br>%{y:,} invoices<extra></extra>',
+  }], layout, PLOTLY_CFG);
+}
+
+function renderStatusDist(rows) {
+  if (!rows.length) return;
+  const colorMap = { paid:COLORS.green, pending:COLORS.indigo, overdue:COLORS.red, partial:COLORS.cyan, cancelled:COLORS.muted };
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    margin: { l:16, r:16, t:32, b:16 },
+    legend: { bgcolor:'transparent', orientation:'h', y:-0.1 },
+  });
+  Plotly.newPlot('chart-status-dist', [{
+    type:'pie', hole:0.38,
+    labels: rows.map(r=>r.status),
+    values: rows.map(r=>r.invoice_count),
+    marker: { colors: rows.map(r=>colorMap[r.status]||COLORS.indigo) },
+    textinfo: 'percent+label',
+    textfont: { color: COLORS.text },
+  }], layout, PLOTLY_CFG);
+}
+
+function renderFinTopClients(rows) {
+  if (!rows.length) return;
+  const sorted = [...rows].sort((a,b)=>a.total_invoiced-b.total_invoiced);
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Amount (TND)', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { type: 'category', tickfont: {size: 11}, automargin: true }),
+    margin: { l: 220, r: 120, t: 40, b: 60 },
+    showlegend: false,
+  });
+  Plotly.newPlot('chart-fin-top-clients', [{
+    type:'bar', orientation:'h',
+    x: sorted.map(r=>r.total_invoiced),
+    y: sorted.map(r=>r.company_name),
+    marker: { color: COLORS.indigo },
+    text: sorted.map(r=>fmt(r.total_invoiced)+' TND'),
+    textposition: 'outside',
+    hovertemplate: '%{y}<br>%{x:,.0f} TND<extra></extra>',
+  }], layout, PLOTLY_CFG);
+}
+
+function renderMonthly(rows) {
+  if (!rows.length) return;
+  const dates = rows.map(d => `${d.year}-${String(d.month).padStart(2,'0')}-01`);
+  const layout = Object.assign({}, PLOTLY_BASE, {
+    barmode: 'stack',
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { title: 'Month', type: 'date', tickfont: {size: 11}, automargin: true }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { title: 'Invoice Count', tickfont: {size: 11}, automargin: true }),
+    margin: { l: 80, r: 30, t: 40, b: 60 },
+  });
+  Plotly.newPlot('chart-monthly-activity', [
+    { name:'Issued',  x:dates, y:rows.map(r=>r.issued),  type:'bar', marker:{color:COLORS.indigo}, hovertemplate: '%{x}<br>%{y:,} issued<extra></extra>' },
+    { name:'Paid',    x:dates, y:rows.map(r=>r.paid),    type:'bar', marker:{color:COLORS.green},  hovertemplate: '%{x}<br>%{y:,} paid<extra></extra>' },
+    { name:'Overdue', x:dates, y:rows.map(r=>r.overdue), type:'bar', marker:{color:COLORS.red},    hovertemplate: '%{x}<br>%{y:,} overdue<extra></extra>' },
+  ], layout, PLOTLY_CFG);
+}
+
+// ── Fullscreen chart toggle ────────────────────────────────────────────────
+function toggleFullscreen(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const chartEl = card.querySelector('.chart-container');
+  if (!chartEl) return;
+  const chartId = chartEl.id;
+  if (card.classList.contains('fullscreen')) {
+    card.classList.remove('fullscreen');
+  } else {
+    card.classList.add('fullscreen');
+  }
+  setTimeout(() => Plotly.relayout(chartId, {autosize: true}), 50);
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.chart-card.fullscreen').forEach(card => {
+      const chartEl = card.querySelector('.chart-container');
+      card.classList.remove('fullscreen');
+      if (chartEl) setTimeout(() => Plotly.relayout(chartEl.id, {autosize: true}), 50);
+    });
+  }
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display === 'flex') {
+    login();
+  }
+});
+
+document.getElementById('login-btn').addEventListener('click', login);
+
+// ── Activity Panel Toggle ──────────────────────────────────────────────────
+function toggleActivityPanel() {
+  const panel  = document.getElementById('right-panel');
+  const toggle = document.getElementById('panel-toggle');
+  const icon   = document.getElementById('panel-toggle-icon');
+  const open   = panel.classList.toggle('open');
+  toggle.classList.toggle('open', open);
+  icon.innerHTML = open
+    ? '<path d="M4 2L8 6L4 10" stroke="#6C63FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<path d="M8 2L4 6L8 10" stroke="#6C63FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+}
+
+// ── Agent Chat ─────────────────────────────────────────────────────────────
+const AGENT_SESSION_KEY = 'axis-agent-session';
+
+function getSessionId() {
+  let sid = sessionStorage.getItem(AGENT_SESSION_KEY);
+  if (!sid) {
+    sid = 'axis-session-1';
+    sessionStorage.setItem(AGENT_SESSION_KEY, sid);
+  }
+  return sid;
+}
+
+function detectSubagent(text) {
+  const t = text.toLowerCase();
+  if (t.startsWith('[crm]') || t.includes('[crm]\n')) return 'sales';
+  if (t.startsWith('[invoicing]') || t.includes('[invoicing]\n')) return 'finance';
+  if (t.startsWith('[data analyst]') || t.includes('[data analyst]\n')) return 'data';
+  if (t.startsWith('[erp assistant]') || t.includes('[erp assistant]\n')) return 'orchestrator';
+  // Fallback to keyword detection
+  if (/deal|pipeline|stage|contact|compan/.test(t)) return 'sales';
+  if (/invoice|revenue|payment/.test(t)) return 'finance';
+  if (/chart|graph|plot/.test(t)) return 'data';
+  return 'orchestrator';
+}
+
+const AGENT_COLORS     = { sales:'#6C63FF', finance:'#3ECF8E', data:'#00D4FF', orchestrator:'#6C63FF' };
+const AGENT_TAGS       = { sales:'Sales Intelligence', finance:'Finance', data:'Data Analyst', orchestrator:'Orchestrator' };
+const AGENT_TAG_CLASSES = { sales:'tag-sales', finance:'tag-finance', data:'tag-data', orchestrator:'tag-orchestrator' };
+
+function setSubagentActive(which) {
+  ['sales','finance','data','orchestrator'].forEach(a => {
+    const dot    = document.getElementById('dot-' + a);
+    const status = document.getElementById('status-' + a);
+    const card   = document.getElementById('agent-card-' + a);
+    if (!dot) return;
+    if (a === which) {
+      dot.style.background = AGENT_COLORS[a];
+      status.textContent   = 'Processing';
+      status.style.color   = AGENT_COLORS[a];
+      card.classList.add('active');
+    } else {
+      dot.style.background = '#333';
+      status.textContent   = 'Standby';
+      status.style.color   = '#666';
+      card.classList.remove('active');
+    }
+  });
+}
+
+function resetSubagents() {
+  ['sales','finance','data','orchestrator'].forEach(a => {
+    const dot    = document.getElementById('dot-' + a);
+    const status = document.getElementById('status-' + a);
+    const card   = document.getElementById('agent-card-' + a);
+    if (!dot) return;
+    const isOrch = a === 'orchestrator';
+    dot.style.background = isOrch ? '#6C63FF' : '#333';
+    status.textContent   = isOrch ? 'Active' : 'Standby';
+    status.style.color   = isOrch ? '#6C63FF' : '#666';
+    card.classList.remove('active');
+  });
+}
+
+function appendMessage(role, text, agentType) {
+  const msgs = document.getElementById('agent-messages');
+  const div  = document.createElement('div');
+  div.className = role === 'user' ? 'msg-user' : 'msg-agent';
+  if (role === 'agent') {
+    const tagClass = AGENT_TAG_CLASSES[agentType] || 'tag-orchestrator';
+    const tagLabel = AGENT_TAGS[agentType]        || 'Orchestrator';
+    const cleanText = text.replace(/^\[[^\]]+\]\n?/, '').trim();
+    div.innerHTML = `<div class="msg-tag ${tagClass}">${tagLabel}</div><div class="msg-bubble">${cleanText.replace(/\n/g,'<br>')}</div>`;
+  } else {
+    div.innerHTML = `<div class="msg-bubble">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('agent-messages');
+  const div  = document.createElement('div');
+  div.className = 'msg-agent';
+  div.id        = 'typing-indicator';
+  div.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+async function sendAgentMessage() {
+  const input = document.getElementById('agent-input');
+  const btn   = document.getElementById('agent-send-btn');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  input.value    = '';
+  input.disabled = true;
+  btn.disabled   = true;
+
+  appendMessage('user', text);
+  showTyping();
+  setSubagentActive(detectSubagent(text));
+
+  try {
+    const token = sessionStorage.getItem('axis_token');
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? {'Authorization': `Bearer ${token}`} : {}),
+      },
+      body: JSON.stringify({ message: text, session_id: getSessionId() }),
+    });
+    const data = await res.json();
+    hideTyping();
+    const reply      = data.response || data.message || JSON.stringify(data);
+    const replyAgent = detectSubagent(reply);
+    appendMessage('agent', reply, replyAgent);
+    setSubagentActive('orchestrator');
+    if (reply.includes('Chart ID:')) {
+      showChartSavedToast();
+    }
+    if (reply.toLowerCase().includes('chart') &&
+        (reply.includes('Chart ID:') || reply.includes('created successfully') ||
+         reply.includes('deleted successfully'))) {
+        loadCharts();
+    }
+  } catch(e) {
+    hideTyping();
+    appendMessage('agent', 'Error connecting to the agent. Please try again.', 'orchestrator');
+    resetSubagents();
+  } finally {
+    input.disabled = false;
+    btn.disabled   = false;
+    input.focus();
+  }
+}
+
+async function clearAgentChat() {
+  try {
+    const sid = getSessionId();
+    await fetch('/chat/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sid }),
+    });
+    sessionStorage.removeItem(AGENT_SESSION_KEY);
+  } catch(e) {}
+  const msgs = document.getElementById('agent-messages');
+  msgs.innerHTML = '<div class="msg-agent"><div class="msg-tag tag-orchestrator">Orchestrator</div><div class="msg-bubble">Conversation cleared. How can I help you?</div></div>';
+  resetSubagents();
+}
+
+// Wire agent input Enter key
+document.getElementById('agent-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAgentMessage(); }
+});
+
+// ── My Charts ──────────────────────────────────────────────────────────────
+window._chartConfigs = {};
+
+async function loadCharts() {
+  const container = document.getElementById('charts-grid-container');
+  try {
+    const charts = await apiFetch('/api/charts');
+    if (!charts || charts.length === 0) {
+      container.innerHTML = `
+        <div class="charts-empty" id="charts-empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px;color:#444;font-size:13px;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="28" width="8" height="16" rx="2" fill="#6C63FF"/>
+            <rect x="20" y="18" width="8" height="26" rx="2" fill="#6C63FF"/>
+            <rect x="36" y="8" width="8" height="36" rx="2" fill="#6C63FF"/>
+          </svg>
+          <div>No charts generated yet.</div>
+          <div style="color:#555;font-size:12px">Ask the AXIS Agent to create one — try:<br>
+            <em style="color:#6C63FF">"create a bar chart of deal count by stage from fact_deals"</em>
+          </div>
+        </div>`;
+      return;
+    }
+    container.innerHTML = '<div class="charts-grid" id="charts-grid"></div>';
+    const grid = document.getElementById('charts-grid');
+    charts.forEach(chart => {
+      const plotId = `my-chart-plot-${chart.chart_id}`;
+      const created = chart.created_at ? fmtTime(chart.created_at) : '';
+      const card = document.createElement('div');
+      card.className = 'my-chart-card';
+      card.id = `my-chart-card-${chart.chart_id}`;
+      card.innerHTML = `
+        <div class="my-chart-card-header">
+          <div class="my-chart-title" title="${chart.title}">${chart.title}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="my-chart-type-badge">${chart.chart_type}</span>
+            <button title="Expand" onclick="openChartModal(${chart.chart_id})" style="background:none;border:none;cursor:pointer;color:#888;padding:2px 4px;border-radius:4px;line-height:1;transition:color .15s" onmouseover="this.style.color='#F0F0F0'" onmouseout="this.style.color='#888'">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 1h4v4M5 13H1V9M13 1l-5 5M1 13l5-5"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="my-chart-container" id="${plotId}"></div>
+        <div class="my-chart-footer">
+          <span class="my-chart-time">${created}</span>
+          ${state.role === 'admin' ? `<button class="my-chart-delete-btn" onclick="deleteChart(${chart.chart_id})">Delete</button>` : ''}
+        </div>`;
+      grid.appendChild(card);
+      setTimeout(() => {
+        try {
+          const cfg = typeof chart.config === 'string' ? JSON.parse(chart.config) : chart.config;
+          if (cfg && cfg.data && cfg.layout) {
+            window._chartConfigs[chart.chart_id] = { cfg, title: chart.title };
+            const layout = Object.assign({}, cfg.layout, {
+              paper_bgcolor: 'transparent',
+              plot_bgcolor: 'transparent',
+              margin: cfg.layout.margin || { l: 60, r: 30, t: 40, b: 60 },
+            });
+            Plotly.newPlot(plotId, cfg.data, layout, PLOTLY_CFG);
+          }
+        } catch(e) {
+          console.error('Chart render error for', plotId, e);
+        }
+      }, 100);
+    });
+  } catch(e) {
+    console.error('loadCharts error:', e);
+  }
+}
+
+function openChartModal(chartId) {
+  const entry = window._chartConfigs[chartId];
+  if (!entry) return;
+  document.getElementById('chart-modal-title').textContent = entry.title;
+  document.getElementById('chart-modal-backdrop').classList.add('open');
+  const plotEl = document.getElementById('chart-modal-plot');
+  const layout = Object.assign({}, entry.cfg.layout, {
+    paper_bgcolor: 'transparent',
+    plot_bgcolor: 'transparent',
+    autosize: true,
+  });
+  Plotly.newPlot(plotEl, entry.cfg.data, layout, Object.assign({}, PLOTLY_CFG, { responsive: true }));
+}
+
+function closeChartModal() {
+  document.getElementById('chart-modal-backdrop').classList.remove('open');
+  Plotly.purge(document.getElementById('chart-modal-plot'));
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChartModal(); });
+
+async function deleteChart(chartId) {
+    if (!confirm('Delete this chart?')) return;
+    try {
+        const token = sessionStorage.getItem('axis_token');
+        const res = await fetch(`/api/charts/${chartId}`, {
+            method: 'DELETE',
+            headers: token ? {'Authorization': `Bearer ${token}`} : {}
+        });
+        if (!res.ok) {
+            console.error('Delete failed:', res.status, await res.text());
+            return;
+        }
+        loadCharts();
+    } catch(e) {
+        console.error('Delete chart error:', e);
+    }
+}
+
+async function clearAllCharts() {
+  try {
+    const charts = await apiFetch('/api/charts');
+    if (!charts || charts.length === 0) return;
+    await Promise.all(charts.map(c => fetch(`/api/charts/${c.chart_id}`, { method: 'DELETE' })));
+    loadCharts();
+  } catch(e) {
+    console.error('clearAllCharts error:', e);
+  }
+}
+
+// ── Evaluation ─────────────────────────────────────────────────────────────
+
+function _scoreColor(score) {
+  if (score >= 70) return 'eval-score-good';
+  if (score >= 40) return 'eval-score-mid';
+  return 'eval-score-bad';
+}
+
+// Cached scores from DB, keyed by exchange_id
+let _evalCache = {};
+
+function _updateStatCards(rows) {
+  if (!rows || !rows.length) return;
+  const total = rows.length;
+  const avg   = Math.round(rows.reduce((s, r) => s + (r.score || 0), 0) / total);
+  const passed = rows.filter(r => r.verdict === 'PASS').length;
+  document.getElementById('eval-stat-total').textContent = total;
+  const avgEl = document.getElementById('eval-stat-avg');
+  avgEl.textContent = avg + '%';
+  avgEl.className = 'eval-stat-value ' + _scoreColor(avg);
+  const passEl = document.getElementById('eval-stat-pass');
+  passEl.textContent = Math.round(passed / total * 100) + '%';
+  passEl.className = 'eval-stat-value ' + _scoreColor(Math.round(passed / total * 100));
+}
+
+async function loadEvaluationResults() {
+  try {
+    const rows = await apiFetch('/api/evaluation/results');
+    if (!rows) return;
+    // Build cache
+    _evalCache = {};
+    rows.forEach(r => { _evalCache[r.exchange_id] = r; });
+    _updateStatCards(rows);
+    _renderResultsTable(rows);
+  } catch(e) {}
+}
+
+function _renderResultsTable(rows) {
+  const tbody = document.getElementById('eval-results-tbody');
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="eval-empty">No evaluations yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const cls = _scoreColor(r.score);
+    const q   = (r.question  || '').slice(0, 60);
+    const res = (r.response  || '').slice(0, 80);
+    const rsn = (r.reasoning || '').replace(/</g, '&lt;');
+    return `<tr>
+      <td style="color:#A0A0A0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.question || ''}">${q}${r.question && r.question.length > 60 ? '…' : ''}</td>
+      <td style="color:#666;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.response || ''}">${res}${r.response && r.response.length > 80 ? '…' : ''}</td>
+      <td style="font-weight:700;font-size:13px" class="${cls}">${r.score}</td>
+      <td><span class="verdict-badge verdict-${r.verdict}">${r.verdict}</span></td>
+      <td style="color:#666;font-size:11px">${rsn}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadConversations() {
+  const list = document.getElementById('eval-conv-list');
+  list.innerHTML = '<div class="eval-empty">Loading…</div>';
+  try {
+    const sessions = await apiFetch(`/api/evaluation/conversations?t=${Date.now()}`);
+    if (!sessions || !sessions.length) {
+      list.innerHTML = '<div class="eval-empty">No real chat sessions found</div>';
+      document.getElementById('conv-count').textContent = '';
+      return;
+    }
+    document.getElementById('conv-count').textContent = sessions.length + ' sessions';
+    list.innerHTML = sessions.map(s => {
+      const sid   = s.session_id;
+      const short = sid.length > 22 ? sid.slice(0, 10) + '…' + sid.slice(-8) : sid;
+      const date  = s.updated_at ? fmtTime(s.updated_at) : '';
+      const count = s.exchanges.length;
+      const exHtml = s.exchanges.map(ex => {
+        const cached = _evalCache[ex.exchange_id];
+        const scoreBadge = cached
+          ? `<span class="eval-score-badge ${_scoreColor(cached.score)}">
+               ${cached.score} <span class="verdict-badge verdict-${cached.verdict}">${cached.verdict}</span>
+             </span>`
+          : `<button class="eval-session-eval-btn" id="ebtn-${ex.exchange_id}"
+               onclick="evaluateExchange('${ex.exchange_id}','${sid}',this)">Evaluate</button>`;
+        return `<div class="eval-exchange">
+          <div class="eval-exchange-q">${ex.question.replace(/</g,'&lt;')}</div>
+          <div class="eval-exchange-a">${(ex.response || '').replace(/</g,'&lt;')}</div>
+          <div class="eval-exchange-footer">
+            <div id="score-${ex.exchange_id}">${scoreBadge}</div>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="eval-session-item">
+        <div class="eval-session-hdr" onclick="toggleSession('${sid}')">
+          <span class="eval-session-caret" id="caret-${sid}">▶</span>
+          <span class="eval-session-id" title="${sid}">${short}</span>
+          <span class="eval-session-meta">${count} msg${count !== 1 ? 's' : ''} · ${date}</span>
+          <button class="eval-session-eval-btn" style="margin-left:8px"
+            onclick="event.stopPropagation();evaluateSession('${sid}')">Eval All</button>
+        </div>
+        <div class="eval-session-body" id="sess-${sid}">${exHtml}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="eval-empty">Error loading conversations</div>';
+  }
+}
+
+function toggleSession(sid) {
+  const body   = document.getElementById('sess-' + sid);
+  const caret  = document.getElementById('caret-' + sid);
+  const isOpen = body.classList.toggle('open');
+  if (caret) { caret.textContent = isOpen ? '▼' : '▶'; caret.classList.toggle('open', isOpen); }
+}
+
+async function evaluateExchange(exchangeId, sessionId, btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
+  try {
+    // Find question/response from the rendered DOM data
+    const scoreDiv = document.getElementById('score-' + exchangeId);
+    const exchEl   = scoreDiv ? scoreDiv.closest('.eval-exchange') : null;
+    const question = exchEl ? exchEl.querySelector('.eval-exchange-q').textContent.trim() : '';
+    const response = exchEl ? exchEl.querySelector('.eval-exchange-a').textContent.trim() : '';
+
+    const result = await apiFetch('/api/evaluation/evaluate-exchange', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({exchange_id: exchangeId, session_id: sessionId, question, response}),
+    });
+    if (!result) return;
+    _evalCache[exchangeId] = result;
+    if (scoreDiv) {
+      scoreDiv.innerHTML = `<span class="eval-score-badge ${_scoreColor(result.score)}">
+        ${result.score} <span class="verdict-badge verdict-${result.verdict}">${result.verdict}</span>
+      </span>`;
+    }
+    loadEvaluationResults();
+  } catch(e) {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Evaluate'; }
+  }
+}
+
+async function evaluateSession(sessionId) {
+  // Disable all exchange buttons in this session
+  const body = document.getElementById('sess-' + sessionId);
+  if (body) body.querySelectorAll('.eval-session-eval-btn').forEach(b => {
+    b.disabled = true; b.textContent = '…';
+  });
+  try {
+    const result = await apiFetch('/api/evaluation/evaluate-session', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: sessionId}),
+    });
+    if (!result) return;
+    result.results.forEach(r => {
+      _evalCache[r.exchange_id] = r;
+      const scoreDiv = document.getElementById('score-' + r.exchange_id);
+      if (scoreDiv) {
+        scoreDiv.innerHTML = `<span class="eval-score-badge ${_scoreColor(r.score)}">
+          ${r.score} <span class="verdict-badge verdict-${r.verdict}">${r.verdict}</span>
+        </span>`;
+      }
+    });
+    loadEvaluationResults();
+  } catch(e) {
+    console.error('evaluateSession error:', e);
+  }
+}
+
+let _toastTimer = null;
+function showChartSavedToast() {
+  const toast = document.getElementById('chart-saved-toast');
+  toast.style.display = 'block';
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 5000);
+}
+
+// ── Splash → Login transition ──────────────────────────────────────────────
+(function() {
+  const splash = document.getElementById('splash');
+  setTimeout(() => {
+    splash.classList.add('fade-out');
+    setTimeout(() => {
+      splash.style.display = 'none';
+      const ls = document.getElementById('login-screen');
+      ls.style.display = 'flex';
+    }, 580);
+  }, 2500);
+})();
+
+// ── User Management ──────────────────────────────────────────────────────────
+
+function _esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function loadUsers() {
+  const tbody   = document.getElementById('users-tbody');
+  const countEl = document.getElementById('users-count');
+  if (!tbody) return;
+  try {
+    const users = await apiFetch('/api/admin/users');
+    countEl.textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#444;padding:32px;font-size:13px">No users found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td style="color:#555">${u.user_id}</td>
+        <td style="font-weight:600;color:#F0F0F0">${_esc(u.username)}</td>
+        <td>${_esc(u.full_name || '—')}</td>
+        <td><span class="role-badge ${_esc(u.role)}">${_esc(u.role)}</span></td>
+        <td style="color:#555">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+        <td>${u.username !== state.username ? `<button class="user-delete-btn" onclick="deleteUser(${u.user_id}, '${_esc(u.username)}')">Delete</button>` : '<span style="color:#333;font-size:11px">you</span>'}</td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#FF4D4D;padding:32px;font-size:13px">Failed to load users</td></tr>';
+  }
+}
+
+async function provisionUser() {
+  const emailEl = document.getElementById('prov-email');
+  const nameEl  = document.getElementById('prov-name');
+  const roleEl  = document.getElementById('prov-role');
+  const btn     = document.getElementById('prov-btn');
+  const email     = emailEl.value.trim();
+  const fullName  = nameEl.value.trim();
+  const role      = roleEl.value;
+
+  if (!email || !fullName) { _showProvMsg('Email and full name are required.', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  document.getElementById('prov-msg').style.display = 'none';
+
+  try {
+    const result = await apiFetch('/api/admin/provision-user', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, full_name: fullName, role }),
+    });
+    const emailNote = result.email_status === 'failed'
+      ? ` Email delivery failed — share credentials manually. Username: <strong>${_esc(result.username)}</strong>, Password: <strong>${_esc(result.password || '')}</strong>`
+      : ` Credentials sent to ${_esc(email)}.`;
+    _showProvMsg(`User <strong>${_esc(result.username)}</strong> created.${emailNote}`, 'success');
+    emailEl.value = '';
+    nameEl.value  = '';
+    loadUsers();
+  } catch(e) {
+    _showProvMsg(_esc(e.message || 'Failed to create user.'), 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create & Send Credentials';
+  }
+}
+
+function _showProvMsg(html, type) {
+  const el = document.getElementById('prov-msg');
+  if (!el) return;
+  el.innerHTML  = html;
+  el.className  = `provision-msg ${type}`;
+  el.style.display = 'block';
+}
+
+async function deleteUser(userId, username) {
+  if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+  try {
+    await apiFetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+    loadUsers();
+  } catch(e) {
+    alert(`Failed to delete user: ${e.message}`);
+  }
+}
+</script>
+
+<!-- Chart expand modal -->
+<div id="chart-modal-backdrop" onclick="closeChartModal()">
+  <div id="chart-modal" onclick="event.stopPropagation()">
+    <div id="chart-modal-header">
+      <span id="chart-modal-title"></span>
+      <button id="chart-modal-close" onclick="closeChartModal()">✕</button>
+    </div>
+    <div id="chart-modal-plot"></div>
+  </div>
+</div>
+</body>
+</html>
