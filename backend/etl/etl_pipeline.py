@@ -25,8 +25,6 @@ from sqlalchemy.orm import Session
 
 from backend.models.database import get_session, engine, Base
 from backend.models.crm_models import Company, Deal
-from backend.models.hr_models import Employee, Department, LeaveRequest, Payroll
-from backend.models.project_models import Project, Task, TimeLog
 from backend.models.invoice_models import Invoice
 from backend.models.warehouse_models import (
     DimDate, DimClient, DimEmployee, DimService,

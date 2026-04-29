@@ -57,7 +57,10 @@
       "Bash(echo \"Server PID: $!\")",
       "Read(//tmp/**)",
       "Bash(uvicorn backend.main:app --reload --port 8000)",
-      "Bash(echo \"uvicorn PID: $!\")"
+      "Bash(echo \"uvicorn PID: $!\")",
+      "Bash(pkill -f \"uvicorn backend.main\")",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
