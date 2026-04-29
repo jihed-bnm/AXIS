@@ -151,12 +151,10 @@ def create_invoice(company_name: str, items_description: str,
         company = db.query(Company).filter(Company.name.ilike(f"%{company_name}%")).first()
         if not company:
             return f"ERROR: Company '{company_name}' not found."
-        project_id = None
         today = datetime.utcnow().date()
         inv = Invoice(
             invoice_number=generate_invoice_number(db),
             company_id=company.id,
-            project_id=project_id,
             subtotal=subtotal,
             tax_rate=tax_rate,
             tax_amount=tax_amount,

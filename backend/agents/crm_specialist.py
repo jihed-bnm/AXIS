@@ -50,6 +50,7 @@ Today's date: {{today}}
 - NEVER ask the user for a company name just to list contacts — call the tool directly.
 - When asked to list deals, call list_deals() directly. Do NOT summarize from context — always call the tool.
 - When creating a deal for a person (e.g. "deal for Jihed"), first call list_contacts() to find their company, then use that company name for create_deal().
+- When asked to mark an activity as done, call list_activities() first to find the Activity ID (the integer in brackets, e.g. [42]). Pass that integer as activity_id to mark_activity_done(). NEVER pass a deal_id, company_id, or contact_id as the activity_id.
 
 {RECORD_FORMAT}
 

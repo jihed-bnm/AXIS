@@ -9,7 +9,6 @@ class Invoice(Base):
     id = Column(Integer, primary_key=True, index=True)
     invoice_number = Column(String, unique=True, nullable=False, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     deal_id = Column(Integer, ForeignKey("deals.id"), nullable=True)
     status = Column(String, default="draft")  # draft, sent, paid, overdue, cancelled
     subtotal = Column(Float, default=0.0)

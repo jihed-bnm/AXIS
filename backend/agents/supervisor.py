@@ -268,6 +268,13 @@ def check_if_confirmation(message: str, chat_history: List[Dict]) -> Optional[st
     if not _is_confirmation_keyword(message):
         return None
 
+    # Guard: "cancel invoice INV-001" / "annuler facture X" — "cancel" and "annuler"
+    # are also domain verbs. If the message fast-routes to a specialist, it is a fresh
+    # domain command, not a meta-operation cancellation, even though it contains a
+    # negative-confirmation keyword.
+    if _is_negative_confirmation(message) and fast_route(message) is not None:
+        return None
+
     last_assistant = None
     for entry in reversed(chat_history):
         if entry.get("role") == "assistant":

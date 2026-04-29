@@ -62,17 +62,25 @@ def list_companies(status: Optional[str] = None, industry: Optional[str] = None)
 
 @tool
 def get_company(name: Optional[str] = None, company_id: Optional[int] = None) -> str:
-    """Get details of a specific company by name or ID."""
+    """Get details of a specific company by name or ID.
+    If the company is not found or has been deleted, this tool returns a 'not found' message.
+    If this tool returns 'not found', do NOT substitute another company — report the
+    not-found result directly to the user."""
     db = get_session()
     try:
         if company_id:
-            company = db.query(Company).filter(Company.id == company_id).first()
+            company = db.query(Company).filter(
+                Company.id == company_id, Company.is_deleted == False
+            ).first()
         elif name:
-            company = db.query(Company).filter(Company.name.ilike(f"%{name}%")).first()
+            company = db.query(Company).filter(
+                Company.name.ilike(f"%{name}%"), Company.is_deleted == False
+            ).first()
         else:
             return "Please provide a company name or ID."
         if not company:
-            return f"Company not found."
+            lookup = name or str(company_id)
+            return f"Company '{lookup}' not found."
         contacts = db.query(Contact).filter(Contact.company_id == company.id).count()
         deals = db.query(Deal).filter(Deal.company_id == company.id, Deal.status == "open").count()
         return (
@@ -705,7 +713,12 @@ def update_deal(
 
 @tool
 def mark_activity_done(activity_id: int, confirmed: bool = False) -> str:
-    """Mark an activity as completed. Requires confirmed=True to apply."""
+    """Mark a CRM activity as completed.
+
+    activity_id: the integer shown in brackets in list_activities output, e.g. [42].
+    This is an Activity ID — NOT a deal_id, company_id, or contact_id.
+    If you do not know the activity_id, call list_activities first to find it.
+    Call with confirmed=False for a preview, then confirmed=True after the user confirms."""
     db = get_session()
     try:
         activity = db.query(Activity).filter(Activity.id == activity_id).first()
