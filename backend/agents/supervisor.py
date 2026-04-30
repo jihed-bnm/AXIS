@@ -55,15 +55,13 @@ _CHART_FILTER_RE = re.compile(
 _CHART_KEYWORDS = [
     "bar chart", "line chart", "pie chart", "donut chart",
     "scatter chart", "funnel chart", "area chart",
+    "churn chart", "churn risk chart", "risk chart",
+    "prediction chart", "predictive chart",
+    "win probability chart", "deal prediction chart", "deal win chart",
     "create a chart", "generate a chart", "show me a chart",
     "create chart", "generate chart", "visualize", "visualisation", "visualization",
     "my charts", "saved charts", "list charts", "delete chart",
     "chart of", "graph of", "plot of",
-    "churn chart", "churn risk chart", "deal prediction chart",
-    "pipeline forecast chart", "predictive chart", "risk chart",
-    # Specific chart-filter phrases that won't clash with single-company CRM queries
-    "deals above", "deals below", "clients above", "clients below",
-    "at risk deals", "at risk clients",
 ]
 
 
