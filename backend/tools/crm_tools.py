@@ -49,13 +49,14 @@ def list_companies(status: Optional[str] = None, industry: Optional[str] = None)
         companies = query.limit(DEFAULT_LIST_LIMIT).all()
         if not companies:
             return "No companies found."
-        lines = []
-        if total > DEFAULT_LIST_LIMIT:
-            lines.append(f"Showing first {DEFAULT_LIST_LIMIT} of {total} results.")
-        lines.append(f"Found {len(companies)} companies:")
+        rows = [
+            f"Showing {len(companies)} of {total} results:",
+            "| ID | Name | Industry | City | Status |",
+            "|---|---|---|---|---|",
+        ]
         for c in companies:
-            lines.append(f"  [{c.id}] {c.name} | {c.industry} | {c.city} | Status: {c.status}")
-        return "\n".join(lines)
+            rows.append(f"| {c.id} | {c.name} | {c.industry or '—'} | {c.city or '—'} | {c.status} |")
+        return "\n".join(rows)
     finally:
         db.close()
 
@@ -120,14 +121,15 @@ def list_deals(status: Optional[str] = None, company_name: Optional[str] = None,
             {co.id: co for co in db.query(Company).filter(Company.id.in_(cids)).all()}
             if cids else {}
         )
-        lines = []
-        if total > DEFAULT_LIST_LIMIT:
-            lines.append(f"Showing first {DEFAULT_LIST_LIMIT} of {total} results.")
-        lines.append(f"Found {len(deals)} deals:")
+        rows = [
+            f"Showing {len(deals)} of {total} results:",
+            "| ID | Title | Company | Value (TND) | Status | Stage |",
+            "|---|---|---|---|---|---|",
+        ]
         for d in deals:
             co = companies_map.get(d.company_id)
-            lines.append(f"  [{d.id}] {d.title} | {co.name if co else '?'} | {d.value:,.0f} TND | {d.status.upper()} | Stage: {d.stage}")
-        return "\n".join(lines)
+            rows.append(f"| {d.id} | {d.title} | {co.name if co else '?'} | {d.value:,.0f} | {d.status.upper()} | {d.stage} |")
+        return "\n".join(rows)
     finally:
         db.close()
 
@@ -225,14 +227,15 @@ def list_contacts(company_name: Optional[str] = None, company_id: Optional[int] 
             {co.id: co for co in db.query(Company).filter(Company.id.in_(cids)).all()}
             if cids else {}
         )
-        lines = []
-        if total > DEFAULT_LIST_LIMIT:
-            lines.append(f"Showing first {DEFAULT_LIST_LIMIT} of {total} results.")
-        lines.append(f"Found {len(contacts)} contacts:")
+        rows = [
+            f"Showing {len(contacts)} of {total} results:",
+            "| ID | First Name | Last Name | Role | Company | Email |",
+            "|---|---|---|---|---|---|",
+        ]
         for c in contacts:
             co = companies_map.get(c.company_id)
-            lines.append(f"  [{c.id}] {c.first_name} {c.last_name} | {c.role} | {co.name if co else '?'} | {c.email}")
-        return "\n".join(lines)
+            rows.append(f"| {c.id} | {c.first_name} | {c.last_name} | {c.role or '—'} | {co.name if co else '?'} | {c.email or '—'} |")
+        return "\n".join(rows)
     finally:
         db.close()
 

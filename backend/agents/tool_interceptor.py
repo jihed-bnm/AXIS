@@ -19,87 +19,121 @@ from logging_config import log_tool_call
 
 # ── List-query deterministic formatters ──────────────────────────────────────
 
+def _is_markdown_table(raw: str) -> bool:
+    """Return True if the tool output is already a markdown table (lines with leading |)."""
+    return any(line.strip().startswith('|') for line in raw.splitlines())
+
+
 def _fmt_contacts(raw: str) -> str:
-    header_lines = []
-    data_lines = []
+    if not raw or not raw.strip():
+        return 'No records found.'
+    if _is_markdown_table(raw):
+        return raw
+    # Legacy [id] FirstName LastName | Role | Company | Email format
+    header = "| ID | First Name | Last Name | Role | Company | Email |"
+    sep = "|---|---|---|---|---|---|"
+    hdr_lines, rows = [], []
     for line in raw.splitlines():
-        line = line.strip()
-        m = re.match(r'^\[(\d+)\]\s+(.*)', line)
+        line_s = line.strip()
+        m = re.match(r'^\[(\d+)\]\s+(.*)', line_s)
         if not m:
-            if line:
-                header_lines.append(line)
+            if line_s:
+                hdr_lines.append(line_s)
             continue
         id_, rest = m.group(1), m.group(2)
         fields = [f.strip() for f in rest.split(' | ')]
-        if len(fields) >= 4:
-            role = fields[1] if fields[1] and fields[1].lower() not in ('none', '') else '-'
-            data_lines.append(f"{id_} | {fields[0]} | {role} | {fields[2]} | {fields[3]}")
-        else:
-            data_lines.append(f"{id_} | {rest}")
-    all_lines = header_lines + data_lines
-    return '\n'.join(all_lines) if all_lines else 'No records found.'
+        name_parts = (fields[0] if fields else '—').split(' ', 1)
+        first = name_parts[0]
+        last = name_parts[1] if len(name_parts) > 1 else '—'
+        role = fields[1] if len(fields) > 1 else '—'
+        company = fields[2] if len(fields) > 2 else '—'
+        email = fields[3] if len(fields) > 3 else '—'
+        rows.append(f"| {id_} | {first} | {last} | {role} | {company} | {email} |")
+    if not rows:
+        return 'No records found.'
+    return '\n'.join(hdr_lines + [header, sep] + rows)
 
 
 def _fmt_deals(raw: str) -> str:
-    header_lines = []
-    data_lines = []
+    if not raw or not raw.strip():
+        return 'No records found.'
+    if _is_markdown_table(raw):
+        return raw
+    # Legacy [id] Title | Company | Amount | Status | Stage: stage format
+    header = "| ID | Title | Company | Amount (TND) | Status | Stage |"
+    sep = "|---|---|---|---|---|---|"
+    hdr_lines, rows = [], []
     for line in raw.splitlines():
-        line = line.strip()
-        m = re.match(r'^\[(\d+)\]\s+(.*)', line)
+        line_s = line.strip()
+        m = re.match(r'^\[(\d+)\]\s+(.*)', line_s)
         if not m:
-            if line:
-                header_lines.append(line)
+            if line_s:
+                hdr_lines.append(line_s)
             continue
         id_, rest = m.group(1), m.group(2)
         fields = [f.strip() for f in rest.split(' | ')]
         if len(fields) >= 5:
             stage = re.sub(r'^Stage:\s*', '', fields[4], flags=re.IGNORECASE)
-            data_lines.append(f"{id_} | {fields[0]} | {fields[1]} | {fields[2]} | {fields[3]} | {stage}")
+            rows.append(f"| {id_} | {fields[0]} | {fields[1]} | {fields[2]} | {fields[3]} | {stage} |")
         else:
-            data_lines.append(f"{id_} | {rest}")
-    all_lines = header_lines + data_lines
-    return '\n'.join(all_lines) if all_lines else 'No records found.'
+            rows.append(f"| {id_} | {rest} |")
+    if not rows:
+        return 'No records found.'
+    return '\n'.join(hdr_lines + [header, sep] + rows)
 
 
 def _fmt_invoices(raw: str) -> str:
-    lines = []
+    if not raw or not raw.strip():
+        return 'No records found.'
+    if _is_markdown_table(raw):
+        return raw
+    # Legacy [id] Number | Company | status | amount | Due: date format
+    header = "| ID | Invoice # | Company | Status | Total (TND) | Due Date |"
+    sep = "|---|---|---|---|---|---|"
+    rows = []
     for line in raw.splitlines():
-        line = line.strip()
-        m = re.match(r'^\[(\d+)\]\s+(.*)', line)
+        line_s = line.strip()
+        m = re.match(r'^\[(\d+)\]\s+(.*)', line_s)
         if not m:
             continue
         id_, rest = m.group(1), m.group(2)
         fields = [f.strip() for f in rest.split(' | ')]
-        # tool order: number | company | status | amount | Due: date
-        # target:     id | number | company | amount | status | date
         if len(fields) >= 5:
             due = re.sub(r'^Due:\s*', '', fields[4], flags=re.IGNORECASE)
-            lines.append(f"{id_} | {fields[0]} | {fields[1]} | {fields[3]} | {fields[2]} | {due}")
+            rows.append(f"| {id_} | {fields[0]} | {fields[1]} | {fields[2]} | {fields[3]} | {due} |")
         else:
-            lines.append(f"{id_} | {rest}")
-    return '\n'.join(lines) if lines else 'No records found.'
+            rows.append(f"| {id_} | {rest} |")
+    if not rows:
+        return 'No records found.'
+    return '\n'.join([header, sep] + rows)
 
 
 def _fmt_companies(raw: str) -> str:
-    header_lines = []
-    data_lines = []
+    if not raw or not raw.strip():
+        return 'No records found.'
+    if _is_markdown_table(raw):
+        return raw
+    # Legacy [id] Name | Industry | City | Status: status format
+    header = "| ID | Name | Industry | City | Status |"
+    sep = "|---|---|---|---|---|"
+    hdr_lines, rows = [], []
     for line in raw.splitlines():
-        line = line.strip()
-        m = re.match(r'^\[(\d+)\]\s+(.*)', line)
+        line_s = line.strip()
+        m = re.match(r'^\[(\d+)\]\s+(.*)', line_s)
         if not m:
-            if line:
-                header_lines.append(line)
+            if line_s:
+                hdr_lines.append(line_s)
             continue
         id_, rest = m.group(1), m.group(2)
         fields = [f.strip() for f in rest.split(' | ')]
-        # tool order: name | industry | city | Status: status
         if len(fields) >= 4:
             status = re.sub(r'^Status:\s*', '', fields[3], flags=re.IGNORECASE)
-            data_lines.append(f"{id_} | {fields[0]} | {fields[1]} | {fields[2]} | {status}")
+            rows.append(f"| {id_} | {fields[0]} | {fields[1]} | {fields[2]} | {status} |")
         else:
-            data_lines.append(f"{id_} | {rest}")
-    all_lines = header_lines + data_lines
-    return '\n'.join(all_lines) if all_lines else 'No records found.'
+            rows.append(f"| {id_} | {rest} |")
+    if not rows:
+        return 'No records found.'
+    return '\n'.join(hdr_lines + [header, sep] + rows)
 
 
 def _fmt_invoice(raw: str) -> str:
@@ -326,6 +360,19 @@ def safe_agent_run(
         logger.error(f"[Interceptor] agent.invoke failed: {e}", exc_info=True)
         return f"Agent error: {str(e)}"
 
+    # Record every tool call from this agent run for evaluation logging.
+    try:
+        from backend.agents.context import append_tool_call as _atc
+        for _step in result.get("intermediate_steps", []):
+            if isinstance(_step, (list, tuple)) and len(_step) >= 2:
+                _action = _step[0]
+                _name = getattr(_action, "tool", None)
+                _inp = getattr(_action, "tool_input", {})
+                if _name:
+                    _atc({"tool": _name, "params": _inp if isinstance(_inp, dict) else {}})
+    except Exception:
+        pass
+
     if not output:
         steps = result.get("intermediate_steps", [])
         if steps:
@@ -358,6 +405,11 @@ def safe_agent_run(
                             t0 = time.monotonic()
                             result = str(tool.invoke(params))
                             log_tool_call(logger, tool_name, params, result, (time.monotonic() - t0) * 1000)
+                            try:
+                                from backend.agents.context import append_tool_call as _atc
+                                _atc({"tool": tool_name, "params": params if isinstance(params, dict) else {}})
+                            except Exception:
+                                pass
                             return result
                 # Check tool_calls attribute
                 tool_calls = getattr(msg, "tool_calls", [])
@@ -372,6 +424,11 @@ def safe_agent_run(
                                 t0 = time.monotonic()
                                 result = str(tool.invoke(args))
                                 log_tool_call(logger, name, args, result, (time.monotonic() - t0) * 1000)
+                                try:
+                                    from backend.agents.context import append_tool_call as _atc
+                                    _atc({"tool": name, "params": args if isinstance(args, dict) else {}})
+                                except Exception:
+                                    pass
                                 return result
         except Exception as ex:
             logger.error(f"[Interceptor] Message scan failed: {ex}", exc_info=True)
@@ -389,13 +446,18 @@ def safe_agent_run(
             if any(p in tool_output_str for p in _WARNING_PATTERNS):
                 _try_capture_pending_action(last_step)
                 return tool_output_str
-            # ── List-query deterministic formatter ───────────────────────────
-            if is_list_query:
-                action = last_step[0] if isinstance(last_step, (list, tuple)) else None
-                last_tool_name = getattr(action, "tool", None)
-                if last_tool_name and last_tool_name in _FORMATTERS:
-                    logger.info(f"[Interceptor] Formatting list output for tool '{last_tool_name}'")
-                    return _FORMATTERS[last_tool_name](tool_output_str)
+            # Collect ALL formatter-tool step outputs — handles single-tool queries
+            # and multi-tool comparisons (e.g. "won vs lost" calls list_deals twice).
+            formatter_outputs = []
+            for step in steps:
+                action = step[0] if isinstance(step, (list, tuple)) else None
+                tool_name = getattr(action, "tool", None)
+                if tool_name and tool_name in _FORMATTERS:
+                    step_output = str(step[1] if isinstance(step, (list, tuple)) and len(step) >= 2 else step)
+                    formatter_outputs.append(_FORMATTERS[tool_name](step_output))
+            if formatter_outputs:
+                logger.info(f"[Interceptor] Returning {len(formatter_outputs)} tool output(s) directly")
+                return "\n\n".join(formatter_outputs)
         # LLM hallucinated a WARNING without calling any tool — force a retry.
         if _HALLUCINATED_CONFIRM_RE.search(output) and not steps:
             logger.warning("[Interceptor] LLM hallucinated confirmation prompt without tool call — re-invoking with explicit directive.")
@@ -445,6 +507,11 @@ def safe_agent_run(
         t0 = time.monotonic()
         tool_result = tool.invoke(params)
         log_tool_call(logger, tool_name, params, str(tool_result), (time.monotonic() - t0) * 1000)
+        try:
+            from backend.agents.context import append_tool_call as _atc
+            _atc({"tool": tool_name, "params": params if isinstance(params, dict) else {}})
+        except Exception:
+            pass
         return str(tool_result)
     except Exception as e:
         logger.error(f"[Interceptor] Tool '{tool_name}' failed: {e}", exc_info=True)

@@ -86,7 +86,7 @@ def fast_route(message: str) -> Optional[str]:
 
 # ── LLM Router ────────────────────────────────────────────────────────────────
 
-ROUTER_PROMPT = """You are a routing layer for an ERP assistant. Your ONLY job is to
+ROUTER_PROMPT = """You are a routing layer for the AXIS operational management platform. Your ONLY job is to
 classify the user's message into exactly one of these categories:
 
 CRM        — companies, contacts, deals, pipeline, leads, activities
@@ -311,8 +311,8 @@ def check_if_confirmation(message: str, chat_history: List[Dict]) -> Optional[st
 
 # ── General Handler ───────────────────────────────────────────────────────────
 
-GENERAL_RESPONSE_PROMPT = """You are a helpful ERP assistant for an IT consulting company.
-You manage 2 specialist agents: CRM and Invoicing.
+GENERAL_RESPONSE_PROMPT = """You are a helpful assistant for the AXIS operational management platform, serving an IT consulting company.
+You manage 2 specialist agents: Sales Intelligence and Finance.
 Answer the user's general question or greeting naturally and briefly.
 If they ask what you can do, explain the 2 modules with short example queries for each.
 
@@ -333,7 +333,7 @@ def handle_general(message: str) -> str:
         return result.content.strip()
     except Exception as e:
         logger.error(f"[Supervisor] General handler failed: {e}", exc_info=True)
-        return "Hello! I'm your ERP assistant. How can I help you today?"
+        return "Hello! I'm the AXIS assistant. How can I help you today?"
 
 
 def _strip_agent_tag(response: str) -> str:
@@ -441,11 +441,14 @@ def run_agent(user_message: str, chat_history: List[Dict] = None) -> str:
         else:
             # Tier 0.5b: disambiguation-sticky — when the previous CRM response
             # contained a disambiguation prompt, route the follow-up to CRM
-            # regardless of its content (e.g. bare "BNA" after "did you mean BNA?").
+            # (e.g. bare "BNA" after "did you mean BNA?").
+            # Fast-route always wins if the new message contains explicit domain
+            # keywords (e.g. "give me a list of invoices" must go to INVOICING).
             if (last_assistant.strip().startswith("[CRM]")
                     and any(p in last_assistant.lower() for p in _DISAMBIGUATION_PATTERNS)):
-                module = "CRM"
-                logger.info("[Supervisor] Disambiguation-sticky -> CRM")
+                fast = fast_route(user_message)
+                module = fast if fast else "CRM"
+                logger.info(f"[Supervisor] Disambiguation-sticky -> {module}")
             else:
                 module = route_message(user_message)
 
@@ -464,7 +467,7 @@ def run_agent(user_message: str, chat_history: List[Dict] = None) -> str:
 
         else:
             response = handle_general(user_message)
-            tag = "ERP Assistant"
+            tag = "AXIS"
 
         # Strip any [TAG] the agent added itself to prevent double-tagging
         clean_response = _strip_agent_tag(response)

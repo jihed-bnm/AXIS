@@ -1,4 +1,4 @@
-"""Chart Generation Agent — creates Plotly charts from ERP warehouse data."""
+"""Chart Generation Agent — creates Plotly charts from AXIS warehouse data."""
 import re
 import logging
 from langchain.agents import AgentExecutor, create_tool_calling_agent
@@ -66,7 +66,7 @@ def _is_fabricated(response: str, steps: list) -> bool:
     return False
 
 SYSTEM_PROMPT = f"""You are the AXIS Chart Generation Agent. You create Plotly charts from
-ERP warehouse data. Your only tools are generate_chart, list_saved_charts, and delete_chart.
+AXIS warehouse data. Your only tools are generate_chart, list_saved_charts, and delete_chart.
 
 ## TOOL USE IS MANDATORY: For every chart request, you MUST invoke generate_chart. Do not produce a textual response describing chart creation without first calling the tool. The tool is the only mechanism that creates charts; without a tool call, no chart exists. Failure to call the tool will cause the user's request to fail.
 

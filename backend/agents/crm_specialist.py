@@ -16,10 +16,11 @@ logger = logging.getLogger(__name__)
 
 from backend.tools.crm_tools import (
     ALL_CRM_TOOLS,
-    list_companies, list_contacts, list_deals, get_pipeline_summary,
+    list_companies, list_contacts, list_deals, list_activities, get_pipeline_summary,
     predict_churn, predict_deal_win, get_at_risk_clients,
 )
 from backend.agents.tool_interceptor import safe_agent_run, _FORMATTERS
+from backend.agents.context import append_tool_call
 from backend.rag.retriever import ERPRetriever
 from backend.agents.prompt_parts import (
     TND_FORMAT_RULE, LANGUAGE_RULE, TOOL_CALL_ENFORCEMENT,
@@ -112,41 +113,54 @@ _LIST_ENTITY_FILTER_RE = re.compile(
 # Supervisor directive injected when the user confirms a WARNING preview
 _SUPERVISOR_CONFIRMATION_PREFIX = "The user has confirmed the previous action."
 
-_LIST_INTENTS = [
-    # Contacts
-    "list contacts", "show contacts", "all contacts", "get contacts",
-    "list all contacts", "show all contacts",
-    "every contact",
-    "liste des contacts", "afficher contacts", "afficher les contacts",
-    "montrer les contacts", "tous les contacts",
-    "chaque contact",
-    # Companies
-    "list companies", "show companies", "all companies", "get companies",
-    "list all companies", "show all companies",
-    "every company", "complete list", "complete list of",
-    "list clients", "show clients", "all clients",
-    "every client",
-    "client companies",
-    "list prospects", "show prospects", "all prospects",
-    "every prospect",
-    "prospect companies",
-    "list inactive", "inactive companies",
-    "liste des entreprises", "afficher les entreprises", "toutes les entreprises",
-    "montrer les entreprises",
-    "chaque entreprise", "chaque client",
-    # Deals
-    "list deals", "show deals", "all deals", "get deals",
-    "list all deals", "show all deals",
-    "every deal",
-    "list won deals", "won deals", "list open deals", "open deals",
-    "list lost deals", "lost deals", "list on_hold deals", "on hold deals",
-    "liste des deals", "afficher les deals", "tous les deals",
-    # Pipeline
-    "pipeline", "pipeline summary", "show pipeline",
-    # At-risk / churn signal queries
-    "at risk clients", "at-risk clients", "churn signals",
-    "clients at risk", "clients with churn", "which clients have churn",
-]
+# Two-keyword gate: entity noun + list-intent verb catches all natural-language
+# phrasings ("give me a list of clients", "show all contacts", etc.) without
+# maintaining an ever-growing exact-phrase list.
+_LIST_ENTITY_KW_RE = re.compile(
+    r'\b(?:compan(?:y|ies)|clients?|contacts?|deals?|activit(?:y|ies)|'
+    r'entreprises?)\b',
+    re.IGNORECASE,
+)
+
+_LIST_INTENT_VERB_RE = re.compile(
+    r'\b(?:list(?:e)?|show|all|every|get|display|afficher|montrer|voir|tous|toutes)\b'
+    r'|give\s+me|show\s+me',
+    re.IGNORECASE,
+)
+
+# CRM-specific patterns that don't follow the entity+verb structure
+_LIST_DIRECT_RE = re.compile(
+    r'\bpipeline\b'
+    r'|at.risk\s+clients?|clients?\s+at\s+risk'
+    r'|churn\s+signals?|clients?\s+with\s+churn|which\s+clients?\s+have\s+churn',
+    re.IGNORECASE,
+)
+
+# Signals that the message carries a constraint the deterministic path cannot honor:
+# time ranges, comparative queries, status/entity filters beyond the _LIST_TOOL_MAP kwargs.
+# Any match forces the query through the LLM so parameters are extracted correctly.
+_BYPASS_FILTER_GUARD_RE = re.compile(
+    # Time constraints (EN + FR)
+    r'\b(?:last|this|previous|next|quarter|month|year|week|since|between|'
+    r'before|after|today|yesterday)\b'
+    r'|\b(?:dernier|derni[eè]re|ce\s+mois|cette\s+ann[ée]e|semaine|trimestre|'
+    r'hier|aujourd.hui)\b'
+    # Comparative signals
+    r'|\b(?:vs\.?|versus|compare[dr]?|comparison|difference|diff[eé]rence)\b'
+    r'|\bcompar(?:er|aison)\b'
+    # Status filter words the deterministic kwargs don't fully cover
+    r'|\b(?:overdue|paid|pending|unpaid)\b'
+    # Entity filters: "by [word]" (company/person references not caught by _LIST_ENTITY_FILTER_RE)
+    r'|\bby\s+\w',
+    re.IGNORECASE,
+)
+
+
+def _is_crm_list_intent(msg_lower: str) -> bool:
+    return (
+        (bool(_LIST_ENTITY_KW_RE.search(msg_lower)) and bool(_LIST_INTENT_VERB_RE.search(msg_lower)))
+        or bool(_LIST_DIRECT_RE.search(msg_lower))
+    )
 
 
 # Ordered most-specific first. Reached when _LIST_ENTITY_FILTER_RE finds no
@@ -185,6 +199,12 @@ _LIST_TOOL_MAP = [
     ("every contact",          list_contacts,         {},                     "list_contacts"),
     ("every deal",             list_deals,            {},                     "list_deals"),
     ("complete list",          list_companies,        {},                     "list_companies"),
+    # Plain entity keywords — catch conversational phrasings like "give me a list of clients"
+    # Must come after all status-filtered entries so specific beats generic.
+    ("clients",                list_companies,        {"status": "client"},   "list_companies"),
+    # Activities
+    ("activities",             list_activities,       {},                     None),
+    ("activity",               list_activities,       {},                     None),
     # Pipeline — structured prose, no formatter
     ("pipeline",               get_pipeline_summary,  {},                     None),
     # At-risk clients — ordered most-specific first
@@ -348,6 +368,7 @@ def run_crm_agent(message: str, history: List[Dict] = None) -> str:
             t0 = time.monotonic()
             result = predict_deal_win.invoke({"deal_id": deal_id})
             log_tool_call(logger, "predict_deal_win", {"deal_id": deal_id}, result, (time.monotonic() - t0) * 1000)
+            append_tool_call({"tool": "predict_deal_win", "params": {"deal_id": deal_id}, "source": "deterministic_bypass"})
             return result
         # No deal ID found — fall through to agent
 
@@ -364,23 +385,38 @@ def run_crm_agent(message: str, history: List[Dict] = None) -> str:
             t0 = time.monotonic()
             result = predict_churn.invoke(invoke_args)
             log_tool_call(logger, "predict_churn", invoke_args, result, (time.monotonic() - t0) * 1000)
+            append_tool_call({"tool": "predict_churn", "params": invoke_args, "source": "deterministic_bypass"})
             return result
         # Company name not resolved — fall through to agent
 
-    # Path 1: List intent — deterministic unless a dynamic entity filter is present.
-    # With a filter: LLM extracts params; is_list_query=True makes safe_agent_run
-    # replace the LLM prose with the raw formatter output from intermediate steps.
+    # Path 1: List intent — deterministic for simple queries and status comparisons
+    # (2+ _LIST_TOOL_MAP matches). Entity-filtered or time-constrained queries use LLM.
     msg_lower = message.lower().strip()
-    if any(intent in msg_lower for intent in _LIST_INTENTS):
+    if _is_crm_list_intent(msg_lower):
         has_entity_filter = bool(_LIST_ENTITY_FILTER_RE.search(msg_lower))
-        if not has_entity_filter:
+        has_filter_constraint = bool(_BYPASS_FILTER_GUARD_RE.search(msg_lower))
+        if not has_entity_filter and not has_filter_constraint:
             for keyword, tool_fn, kwargs, formatter_key in _LIST_TOOL_MAP:
                 if keyword in msg_lower:
                     t0 = time.monotonic()
                     raw = str(tool_fn.invoke(kwargs))
                     log_tool_call(logger, tool_fn.name, kwargs, raw, (time.monotonic() - t0) * 1000)
+                    append_tool_call({"tool": tool_fn.name, "params": kwargs, "source": "deterministic_bypass"})
                     return _FORMATTERS[formatter_key](raw) if formatter_key else raw
-        # Entity filter present or no _LIST_TOOL_MAP match — LLM path with formatter guard.
+        elif has_filter_constraint and not has_entity_filter:
+            matched, seen = [], set()
+            for keyword, tool_fn, kwargs, formatter_key in _LIST_TOOL_MAP:
+                if keyword in msg_lower:
+                    cache_key = (tool_fn.name, frozenset(kwargs.items()))
+                    if cache_key not in seen:
+                        seen.add(cache_key)
+                        t0 = time.monotonic()
+                        raw = str(tool_fn.invoke(kwargs))
+                        log_tool_call(logger, tool_fn.name, kwargs, raw, (time.monotonic() - t0) * 1000)
+                        append_tool_call({"tool": tool_fn.name, "params": kwargs, "source": "deterministic_bypass"})
+                        matched.append(_FORMATTERS[formatter_key](raw) if formatter_key else raw)
+            if len(matched) >= 2:
+                return "\n\n".join(matched)
         return safe_agent_run(agent, ALL_CRM_TOOLS, message, lc_history, is_list_query=True)
 
     # Path 3: Read operation with RAG context
@@ -393,6 +429,12 @@ def run_crm_agent(message: str, history: List[Dict] = None) -> str:
         company_docs = retriever.retrieve_for_company(company_name, message)
         company_context = retriever.format_context(company_docs)
         context = company_context + "\n\n" + context
+
+    try:
+        from backend.agents.context import set_rag_context
+        set_rag_context(context)
+    except Exception:
+        pass
 
     enriched_message = (
         f"TODAY'S DATE: {today}\n\n"

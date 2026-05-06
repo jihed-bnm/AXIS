@@ -29,11 +29,15 @@ TOOL_CALL_ENFORCEMENT = "Always call tools. Never fabricate data from context."
 
 RECORD_FORMAT = """\
 ## RECORD FORMAT
-When a list tool returns results, render each returned record on its
-own line using " | " as the field separator. Include the fields the
-tool provides in the order the tool provides them. Do not add column
-headers, do not add an introductory sentence, do not summarize before
-the records."""
+List tools return a pre-formatted markdown table beginning with 'Showing X of Y results:'. \
+Relay the complete tool output verbatim — every row, the header line, unchanged. \
+Do not reformat, summarize, or omit rows. The table is already fully formatted in Python.
+
+When a tool returns a pre-formatted markdown table, relay it to the user EXACTLY as returned — \
+do not reformat, summarize, or select rows. Copy the tool output verbatim including the \
+'Showing X of Y' header line.
+
+For a single-record result, use a vertical key: value list (one field per line), not a table."""
 
 # ── Output tagging ─────────────────────────────────────────────────────────────
 

@@ -105,7 +105,9 @@ class Session(Base):
     __tablename__ = "sessions"
     id = Column(String, primary_key=True)          # UUID
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    messages = Column(JSON, default=list)           # list of {role, content}
+    messages = Column(JSON, default=list)           # list of {role, content, tool_calls?, rag_context?}
     pending_action = Column(JSON, nullable=True, default=None)  # {"tool": str, "params": dict}
+    tool_calls = Column(Text, nullable=True)        # JSON list of last exchange's tool calls
+    rag_context = Column(Text, nullable=True)       # RAG context text from last exchange
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,5 +1,5 @@
 """
-FastAPI main app — ERP AI Agent backend
+FastAPI main app — AXIS backend
 """
 import logging
 
@@ -14,6 +14,7 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+import json
 import uuid
 import os
 import re
@@ -22,14 +23,18 @@ from datetime import datetime
 from backend.models.database import create_tables, get_session
 from backend.models.crm_models import Session as ChatSession
 from backend.agents.supervisor import run_agent, _is_positive_confirmation, _is_negative_confirmation, _WRITE_PREVIEW_PATTERNS
-from backend.agents.context import get_pending_action, clear_pending_action
+from backend.agents.context import (
+    get_pending_action, clear_pending_action,
+    get_rag_context, clear_rag_context,
+    get_tool_calls, clear_tool_calls,
+)
 from backend.agents.tool_interceptor import _find_tool
 from backend.routes.axis import router as axis_router, _log
 from backend.auth import decode_token
 
 app = FastAPI(
-    title="ERP AI Agent API",
-    description="Natural language interface for ERP/CRM operations",
+    title="AXIS API",
+    description="Natural language interface for the AXIS operational management platform",
     version="1.0.0"
 )
 
@@ -59,8 +64,16 @@ def startup():
     except Exception as e:
         db.rollback()
         logger.warning(f"[Startup] pending_action migration skipped: {e}")
-    finally:
-        db.close()
+    for col_def in ("tool_calls TEXT", "rag_context TEXT"):
+        try:
+            db.execute(text(
+                f"ALTER TABLE sessions ADD COLUMN IF NOT EXISTS {col_def}"
+            ))
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            logger.warning(f"[Startup] {col_def.split()[0]} migration skipped: {e}")
+    db.close()
     logger.info("database tables ready")
 
 
@@ -73,8 +86,24 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     session_id: str
-    response: str
+    message: str
+    requires_confirmation: bool
+    module: str
     timestamp: str
+
+
+_MODULE_TAG_MAP = {
+    "crm": "Sales Intelligence",
+    "invoicing": "Finance",
+    "data analyst": "Data Analyst",
+}
+
+
+def _response_module(text: str) -> str:
+    m = re.match(r'^\[([^\]]+)\]', text.strip())
+    if not m:
+        return "Orchestrator"
+    return _MODULE_TAG_MAP.get(m.group(1).lower(), "Orchestrator")
 
 
 # ─── Chat endpoint ────────────────────────────────────────────────────────────
@@ -136,7 +165,7 @@ async def chat(request: ChatRequest, http_request: Request):
             if _is_negative_confirmation(request.message):
                 # User cancelled — clear pending action and acknowledge
                 session.pending_action = None
-                response_text = "[ERP Assistant]\nOperation cancelled."
+                response_text = "[AXIS]\nOperation cancelled."
 
             elif _is_positive_confirmation(request.message):
                 # Deterministic execution — bypass LLM entirely
@@ -149,14 +178,18 @@ async def chat(request: ChatRequest, http_request: Request):
                     tool_params["confirmed"] = True
                     try:
                         tool_result = str(tool.invoke(tool_params))
-                        response_text = f"[ERP Assistant]\n{tool_result}"
+                        response_text = f"[AXIS]\n{tool_result}"
                     except Exception as te:
                         logger.error(f"[Main] Pending action tool '{tool_name}' failed: {te}", exc_info=True)
                         response_text = f"[Error]\nTool '{tool_name}' failed: {te}"
                     session.pending_action = None
 
+        captured_tool_calls: list = []
+        captured_rag_context: str = ""
         if response_text is None:
-            clear_pending_action()  # Reset ContextVar before agent run
+            clear_pending_action()
+            clear_tool_calls()
+            clear_rag_context()
             response_text = run_agent(request.message, history)
             # Capture any new pending action set during this agent run
             new_pending = get_pending_action()
@@ -166,13 +199,24 @@ async def chat(request: ChatRequest, http_request: Request):
                 flag_modified(session, "pending_action")
             else:
                 session.pending_action = None
+            captured_tool_calls = get_tool_calls()
+            captured_rag_context = get_rag_context()
 
         # Log the agent interaction with username
         _log("agent", "chat", request.message[:200], username=username)
 
-        # Update session history
+        # Update session history — embed tool_calls/rag_context in assistant message
         history.append({"role": "human", "content": request.message})
-        history.append({"role": "assistant", "content": response_text})
+        history.append({
+            "role": "assistant",
+            "content": response_text,
+            "tool_calls": json.dumps(captured_tool_calls),
+            "rag_context": captured_rag_context,
+        })
+
+        # Also store last-exchange data as session columns for quick lookup
+        session.tool_calls = json.dumps(captured_tool_calls)
+        session.rag_context = captured_rag_context
 
         # Keep last 20 messages to avoid token overflow
         if len(history) > 20:
@@ -185,7 +229,11 @@ async def chat(request: ChatRequest, http_request: Request):
 
         return ChatResponse(
             session_id=session_id,
-            response=response_text,
+            message=response_text,
+            requires_confirmation=any(
+                p in response_text for p in _WRITE_PREVIEW_PATTERNS
+            ),
+            module=_response_module(response_text),
             timestamp=datetime.utcnow().isoformat()
         )
 
@@ -224,4 +272,4 @@ async def clear_session(session_id: str):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "ERP AI Agent"}
+    return {"status": "ok", "service": "AXIS"}

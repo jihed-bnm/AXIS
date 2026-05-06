@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 <style>
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -150,6 +152,22 @@ input{outline:none;font-family:'Inter',sans-serif}
 .msg-bubble{padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.6;color:#F0F0F0}
 .msg-user .msg-bubble{background:#6C63FF;border-radius:12px 12px 2px 12px}
 .msg-agent .msg-bubble{background:#1A1A1A;border-radius:12px 12px 12px 2px}
+.msg-bubble p{margin:0 0 4px}
+.msg-bubble ul,.msg-bubble ol{padding-left:20px;margin:4px 0}
+.msg-bubble code{background:#111;padding:2px 5px;border-radius:3px;font-size:11px;font-family:monospace}
+.msg-bubble pre{background:#111;padding:8px;border-radius:6px;overflow-x:auto;margin:6px 0}
+.msg-bubble pre code{background:none;padding:0}
+.msg-bubble table{width:100%;border-collapse:collapse;display:table;margin:8px 0;font-size:12px}
+.msg-bubble th,.msg-bubble td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border-color,#333)}
+.msg-bubble th{background:var(--bg-secondary,#1a1a2e);font-weight:600}
+.msg-bubble tr:hover{background:rgba(255,255,255,0.03)}
+.confirm-actions{display:flex;gap:10px;padding:6px 0 6px 8px}
+.confirm-btn{padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:filter .2s ease,opacity .2s ease;font-family:'Inter',sans-serif}
+.confirm-btn:disabled{opacity:.4;cursor:not-allowed}
+.confirm-yes{background:#3ECF8E;color:#0A0A0A;border:none}
+.confirm-yes:hover:not(:disabled){filter:brightness(1.15)}
+.confirm-no{background:#FF4D4D;color:#F0F0F0;border:none}
+.confirm-no:hover:not(:disabled){filter:brightness(1.15)}
 .msg-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-bottom:4px;display:inline-block;letter-spacing:.05em}
 .tag-sales{background:rgba(108,99,255,.2);color:#6C63FF}
 .tag-finance{background:rgba(62,207,142,.2);color:#3ECF8E}
@@ -183,10 +201,6 @@ input{outline:none;font-family:'Inter',sans-serif}
 #view-activity{display:none}
 .activity-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .activity-title{font-size:16px;font-weight:600;color:#F0F0F0}
-.filter-bar{display:flex;gap:8px}
-.filter-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#666666;font-size:12px;font-weight:500;padding:6px 14px;transition:all .2s ease}
-.filter-btn:hover{color:#F0F0F0}
-.filter-btn.active{background:#6C63FF22;border-color:#6C63FF;color:#6C63FF}
 .activity-table-wrap{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:12px;overflow:hidden}
 .activity-table{width:100%;border-collapse:collapse}
 .activity-table th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:#666666;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #1E1E1E;background:#111111}
@@ -211,6 +225,10 @@ input{outline:none;font-family:'Inter',sans-serif}
 .charts-page-title{font-size:16px;font-weight:600;color:#F0F0F0}
 .charts-clear-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#666666;font-size:12px;font-weight:500;padding:6px 14px;transition:all .2s ease}
 .charts-clear-btn:hover{border-color:#FF4D4D;color:#FF4D4D}
+.chart-filter-bar{display:flex;gap:6px}
+.chart-filter-btn{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;color:#666666;font-size:12px;font-weight:500;padding:5px 12px;transition:all .2s ease}
+.chart-filter-btn:hover{color:#F0F0F0}
+.chart-filter-btn.active{background:#6C63FF22;border-color:#6C63FF;color:#6C63FF}
 .charts-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px;color:#444;font-size:13px;text-align:center}
 .charts-empty svg{opacity:.25}
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
@@ -307,6 +325,22 @@ input{outline:none;font-family:'Inter',sans-serif}
 .eval-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #1E1E1E;background:#111;white-space:nowrap}
 .eval-table td{padding:9px 14px;font-size:12px;color:#D0D0D0;border-bottom:1px solid #1E1E1E11;vertical-align:top}
 .eval-table tr:last-child td{border-bottom:none}
+
+/* metric progress bars */
+.eval-metrics-panel{display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1E1E1E33}
+.eval-metrics-panel.open{display:block}
+.metric-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.metric-label{font-size:10px;color:#666;width:130px;flex-shrink:0;white-space:nowrap}
+.metric-track{flex:1;height:5px;background:#1E1E1E;border-radius:3px;overflow:hidden}
+.metric-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.metric-fill.good{background:#3ECF8E}.metric-fill.mid{background:#F59E0B}.metric-fill.bad{background:#FF4D4D}
+.metric-val{font-size:10px;color:#555;width:34px;text-align:right;flex-shrink:0}
+.metric-rag{opacity:.32}
+.eval-notes-text{font-size:10px;color:#555;margin-top:8px;line-height:1.5;font-style:italic;padding:6px 8px;background:#6C63FF08;border-radius:4px}
+.eval-toggle-btn{background:none;border:none;color:#6C63FF55;font-size:10px;cursor:pointer;padding:2px 0;margin-left:6px;transition:color .15s}
+.eval-toggle-btn:hover{color:#6C63FF}
+.eval-spin{display:inline-block;width:10px;height:10px;border:2px solid #333;border-top-color:#6C63FF;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── Chart expand modal ───────────────────────────────────────────────── */
 #chart-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
@@ -444,7 +478,7 @@ input{outline:none;font-family:'Inter',sans-serif}
       <!-- ── Dashboard View ─────────────────────────────────────────────── -->
       <div id="view-dashboard" class="view">
         <div class="tab-bar">
-          <button class="tab-btn active" id="tab-crm-btn" onclick="switchDashTab('crm')">Sales &amp; CRM</button>
+          <button class="tab-btn active" id="tab-crm-btn" onclick="switchDashTab('crm')">Sales</button>
           <button class="tab-btn" id="tab-finance-btn" onclick="switchDashTab('finance')">Finance &amp; Invoicing</button>
         </div>
 
@@ -635,7 +669,7 @@ input{outline:none;font-family:'Inter',sans-serif}
             <div class="agent-messages" id="agent-messages">
               <div class="msg-agent">
                 <div class="msg-tag tag-orchestrator">Orchestrator</div>
-                <div class="msg-bubble">Hello! I'm the AXIS Agent. I can help you analyze sales pipeline, invoicing data, or answer questions about your ERP data. What would you like to know?</div>
+                <div class="msg-bubble">Hello! I'm the AXIS Agent. I can help you analyze sales pipeline, invoicing data, or answer questions about your operational data. What would you like to know?</div>
               </div>
             </div>
             <div class="agent-input-area">
@@ -652,7 +686,7 @@ input{outline:none;font-family:'Inter',sans-serif}
               <div class="subagent-dot" id="dot-sales" style="background:#333"></div>
               <div class="subagent-info">
                 <div class="subagent-name">Sales Intelligence</div>
-                <div class="subagent-role">Deals, pipeline, stages &amp; CRM analysis</div>
+                <div class="subagent-role">Deals, pipeline, stages &amp; sales analysis</div>
                 <div class="subagent-status" id="status-sales" style="color:#666">Standby</div>
               </div>
             </div>
@@ -688,13 +722,6 @@ input{outline:none;font-family:'Inter',sans-serif}
       <div id="view-activity" class="view">
         <div class="activity-header">
           <div class="activity-title">System Activity Log</div>
-          <div class="filter-bar">
-            <button class="filter-btn active" data-filter="all" onclick="filterActivity('all')">All</button>
-            <button class="filter-btn" data-filter="add" onclick="filterActivity('add')">Additions</button>
-            <button class="filter-btn" data-filter="update" onclick="filterActivity('update')">Updates</button>
-            <button class="filter-btn" data-filter="delete" onclick="filterActivity('delete')">Deletions</button>
-            <button class="filter-btn" data-filter="etl" onclick="filterActivity('etl')">ETL</button>
-          </div>
         </div>
         <div class="activity-table-wrap">
           <table class="activity-table">
@@ -718,7 +745,15 @@ input{outline:none;font-family:'Inter',sans-serif}
       <div id="view-charts" class="view">
         <div class="charts-page-header">
           <div class="charts-page-title">My Charts</div>
-          <button class="charts-clear-btn" onclick="clearAllCharts()">Clear All</button>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="chart-filter-bar">
+              <button class="chart-filter-btn active" data-period="all"          onclick="filterCharts('all')">All Time</button>
+              <button class="chart-filter-btn"         data-period="year"         onclick="filterCharts('year')">This Year</button>
+              <button class="chart-filter-btn"         data-period="quarter"      onclick="filterCharts('quarter')">This Quarter</button>
+              <button class="chart-filter-btn"         data-period="month"        onclick="filterCharts('month')">This Month</button>
+            </div>
+            <button class="charts-clear-btn" onclick="clearAllCharts()">Clear All</button>
+          </div>
         </div>
         <div id="charts-grid-container">
           <div class="charts-empty" id="charts-empty-state">
@@ -779,13 +814,15 @@ input{outline:none;font-family:'Inter',sans-serif}
               <thead>
                 <tr>
                   <th>Question</th>
-                  <th>Response</th>
                   <th>Score</th>
+                  <th>Task</th>
+                  <th>Tool</th>
+                  <th>Intent</th>
                   <th>Verdict</th>
-                  <th>Reasoning</th>
+                  <th>Notes</th>
                 </tr>
               </thead>
-              <tbody id="eval-results-tbody"><tr><td colspan="5" class="eval-empty">No evaluations yet</td></tr></tbody>
+              <tbody id="eval-results-tbody"><tr><td colspan="7" class="eval-empty">No evaluations yet</td></tr></tbody>
             </table>
           </div>
 
@@ -917,9 +954,9 @@ const state = {
   etlStatus:    'idle',
   etlPollTimer: null,
   feedPollTimer: null,
-  activityFilter: 'all',
   activityData:  [],
   feedData:      [],
+  chartsFilter:  'all',
   crmLoaded:     false,
   finLoaded:     false,
 };
@@ -1152,17 +1189,8 @@ function renderFeed(rows) {
 }
 
 // ── Activity Table ─────────────────────────────────────────────────────────
-function filterActivity(f) {
-  state.activityFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === f);
-  });
-  renderActivityTable();
-}
-
 function renderActivityTable() {
   const rows = state.activityData;
-  const f    = state.activityFilter;
   const tbody = document.getElementById('activity-table-body');
   const isAdmin = state.role === 'admin';
   const cols = isAdmin ? 6 : 5;
@@ -1170,13 +1198,8 @@ function renderActivityTable() {
     tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#666;padding:32px">No activity recorded yet</td></tr>`;
     return;
   }
-  const filtered = f === 'all' ? rows : rows.filter(r => r.action_type === f);
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#666;padding:32px">No entries matching this filter</td></tr>`;
-    return;
-  }
   const dotColors = { add:'#3ECF8E', update:'#00D4FF', delete:'#FF4D4D', etl:'#6C63FF' };
-  tbody.innerHTML = filtered.map(r => {
+  tbody.innerHTML = rows.map(r => {
     const dc = dotColors[r.action_type] || COLORS.muted;
     const sc = r.status === 'error' ? 'error' : 'success';
     const userCell = isAdmin ? `<td style="color:#888">${r.username || '—'}</td>` : '';
@@ -1542,21 +1565,39 @@ function toggleActivityPanel() {
 // ── Agent Chat ─────────────────────────────────────────────────────────────
 const AGENT_SESSION_KEY = 'axis-agent-session';
 
+function _generateUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
 function getSessionId() {
-  let sid = sessionStorage.getItem(AGENT_SESSION_KEY);
+  let sid = localStorage.getItem(AGENT_SESSION_KEY);
   if (!sid) {
-    sid = 'axis-session-1';
-    sessionStorage.setItem(AGENT_SESSION_KEY, sid);
+    sid = _generateUUID();
+    localStorage.setItem(AGENT_SESSION_KEY, sid);
   }
   return sid;
 }
+
+// Configure marked once: GFM tables + soft line breaks
+marked.setOptions({ breaks: true, gfm: true });
+
+const MODULE_TO_SUBAGENT = {
+  'Sales Intelligence': 'sales',
+  'Finance':            'finance',
+  'Data Analyst':       'data',
+  'Orchestrator':       'orchestrator',
+};
 
 function detectSubagent(text) {
   const t = text.toLowerCase();
   if (t.startsWith('[crm]') || t.includes('[crm]\n')) return 'sales';
   if (t.startsWith('[invoicing]') || t.includes('[invoicing]\n')) return 'finance';
   if (t.startsWith('[data analyst]') || t.includes('[data analyst]\n')) return 'data';
-  if (t.startsWith('[erp assistant]') || t.includes('[erp assistant]\n')) return 'orchestrator';
+  if (t.startsWith('[axis]') || t.includes('[axis]\n')) return 'orchestrator';
   // Fallback to keyword detection
   if (/deal|pipeline|stage|contact|compan/.test(t)) return 'sales';
   if (/invoice|revenue|payment/.test(t)) return 'finance';
@@ -1602,15 +1643,20 @@ function resetSubagents() {
   });
 }
 
+function renderMarkdown(text) {
+  const rawHtml = marked.parse(text);
+  return (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(rawHtml) : rawHtml;
+}
+
 function appendMessage(role, text, agentType) {
   const msgs = document.getElementById('agent-messages');
   const div  = document.createElement('div');
   div.className = role === 'user' ? 'msg-user' : 'msg-agent';
   if (role === 'agent') {
-    const tagClass = AGENT_TAG_CLASSES[agentType] || 'tag-orchestrator';
-    const tagLabel = AGENT_TAGS[agentType]        || 'Orchestrator';
+    const tagClass  = AGENT_TAG_CLASSES[agentType] || 'tag-orchestrator';
+    const tagLabel  = AGENT_TAGS[agentType]        || 'Orchestrator';
     const cleanText = text.replace(/^\[[^\]]+\]\n?/, '').trim();
-    div.innerHTML = `<div class="msg-tag ${tagClass}">${tagLabel}</div><div class="msg-bubble">${cleanText.replace(/\n/g,'<br>')}</div>`;
+    div.innerHTML = `<div class="msg-tag ${tagClass}">${tagLabel}</div><div class="msg-bubble">${renderMarkdown(cleanText)}</div>`;
   } else {
     div.innerHTML = `<div class="msg-bubble">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
   }
@@ -1633,13 +1679,38 @@ function hideTyping() {
   if (el) el.remove();
 }
 
-async function sendAgentMessage() {
+function clearConfirmActions() {
+  const el = document.getElementById('confirm-actions');
+  if (el) el.remove();
+}
+
+function appendConfirmActions() {
+  const msgs = document.getElementById('agent-messages');
+  const div  = document.createElement('div');
+  div.id = 'confirm-actions';
+  div.className = 'confirm-actions';
+  div.innerHTML =
+    '<button class="confirm-btn confirm-yes" onclick="sendConfirmation(\'confirm\')">✓ Confirm</button>' +
+    '<button class="confirm-btn confirm-no"  onclick="sendConfirmation(\'cancel\')">✗ Cancel</button>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function sendConfirmation(action) {
+  const el = document.getElementById('confirm-actions');
+  if (el) el.querySelectorAll('button').forEach(b => { b.disabled = true; });
+  sendAgentMessage(action);
+}
+
+async function sendAgentMessage(overrideText) {
+  clearConfirmActions();
+
   const input = document.getElementById('agent-input');
   const btn   = document.getElementById('agent-send-btn');
-  const text  = input.value.trim();
+  const text  = overrideText != null ? overrideText : input.value.trim();
   if (!text) return;
 
-  input.value    = '';
+  if (overrideText == null) input.value = '';
   input.disabled = true;
   btn.disabled   = true;
 
@@ -1659,9 +1730,15 @@ async function sendAgentMessage() {
     });
     const data = await res.json();
     hideTyping();
-    const reply      = data.response || data.message || JSON.stringify(data);
-    const replyAgent = detectSubagent(reply);
+    if (data.session_id) localStorage.setItem(AGENT_SESSION_KEY, data.session_id);
+    const reply      = data.message || data.response || JSON.stringify(data);
+    const replyAgent = (data.module && MODULE_TO_SUBAGENT[data.module])
+                         ? MODULE_TO_SUBAGENT[data.module]
+                         : detectSubagent(reply);
     appendMessage('agent', reply, replyAgent);
+    if (data.requires_confirmation) {
+      appendConfirmActions();
+    }
     setSubagentActive('orchestrator');
     if (reply.includes('Chart ID:')) {
       showChartSavedToast();
@@ -1685,13 +1762,15 @@ async function sendAgentMessage() {
 async function clearAgentChat() {
   try {
     const sid = getSessionId();
-    await fetch('/chat/clear', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sid }),
-    });
-    sessionStorage.removeItem(AGENT_SESSION_KEY);
+    await fetch(`/session/${sid}`, { method: 'DELETE' });
   } catch(e) {}
+  localStorage.setItem(AGENT_SESSION_KEY, _generateUUID());
+  hideTyping();
+  clearConfirmActions();
+  const input = document.getElementById('agent-input');
+  const btn   = document.getElementById('agent-send-btn');
+  if (input) { input.disabled = false; input.value = ''; }
+  if (btn)   { btn.disabled = false; }
   const msgs = document.getElementById('agent-messages');
   msgs.innerHTML = '<div class="msg-agent"><div class="msg-tag tag-orchestrator">Orchestrator</div><div class="msg-bubble">Conversation cleared. How can I help you?</div></div>';
   resetSubagents();
@@ -1830,13 +1909,59 @@ function _scoreColor(score) {
   return 'eval-score-bad';
 }
 
+function _pct(v) { return v == null ? null : Math.round(v * 100); }
+
+function _metricBar(label, value, isRag) {
+  if (value == null) {
+    return `<div class="metric-row metric-rag">
+      <span class="metric-label">${label}</span>
+      <div class="metric-track"><div class="metric-fill" style="width:0%"></div></div>
+      <span class="metric-val" style="color:#333">N/A</span>
+    </div>`;
+  }
+  const pct = Math.round(value * 100);
+  const cls = pct >= 70 ? 'good' : pct >= 40 ? 'mid' : 'bad';
+  const ragCls = isRag ? ' metric-rag' : '';
+  return `<div class="metric-row${ragCls}">
+    <span class="metric-label">${label}</span>
+    <div class="metric-track"><div class="metric-fill ${cls}" style="width:${pct}%"></div></div>
+    <span class="metric-val">${pct}%</span>
+  </div>`;
+}
+
+function _renderMetricsPanel(id, r) {
+  const notes = (r.evaluation_notes || r.reasoning || '').replace(/</g, '&lt;');
+  return `<div class="eval-metrics-panel" id="mp-${id}">
+    ${_metricBar('Task Adherence',    r.task_adherence,      false)}
+    ${_metricBar('Tool Call Acc.',    r.tool_call_accuracy,  false)}
+    ${_metricBar('Intent Resolution', r.intent_resolution,   false)}
+    ${_metricBar('Context Relevance', r.context_relevance,   true)}
+    ${_metricBar('Retrieval Prec.',   r.retrieval_precision, true)}
+    ${_metricBar('Hit Rate',          r.hit_rate,            true)}
+    ${_metricBar('Reciprocal Rank',   r.reciprocal_rank,     true)}
+    ${_metricBar('NDCG',              r.ndcg,                true)}
+    ${notes ? `<div class="eval-notes-text">${notes}</div>` : ''}
+  </div>`;
+}
+
+function toggleMetrics(id) {
+  const panel = document.getElementById('mp-' + id);
+  const btn   = document.getElementById('mtbtn-' + id);
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  if (btn) btn.textContent = open ? '▲ hide' : '▼ metrics';
+}
+
 // Cached scores from DB, keyed by exchange_id
 let _evalCache = {};
+// Full exchange data (question, response, tool_calls, rag_context), keyed by exchange_id
+let _exchangeData = {};
 
 function _updateStatCards(rows) {
   if (!rows || !rows.length) return;
-  const total = rows.length;
-  const avg   = Math.round(rows.reduce((s, r) => s + (r.score || 0), 0) / total);
+  const total  = rows.length;
+  const scores = rows.map(r => r.overall_score != null ? Math.round(r.overall_score * 100) : (r.score || 0));
+  const avg    = Math.round(scores.reduce((s, v) => s + v, 0) / total);
   const passed = rows.filter(r => r.verdict === 'PASS').length;
   document.getElementById('eval-stat-total').textContent = total;
   const avgEl = document.getElementById('eval-stat-avg');
@@ -1851,7 +1976,6 @@ async function loadEvaluationResults() {
   try {
     const rows = await apiFetch('/api/evaluation/results');
     if (!rows) return;
-    // Build cache
     _evalCache = {};
     rows.forEach(r => { _evalCache[r.exchange_id] = r; });
     _updateStatCards(rows);
@@ -1862,22 +1986,35 @@ async function loadEvaluationResults() {
 function _renderResultsTable(rows) {
   const tbody = document.getElementById('eval-results-tbody');
   if (!rows || !rows.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="eval-empty">No evaluations yet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="eval-empty">No evaluations yet</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(r => {
-    const cls = _scoreColor(r.score);
-    const q   = (r.question  || '').slice(0, 60);
-    const res = (r.response  || '').slice(0, 80);
-    const rsn = (r.reasoning || '').replace(/</g, '&lt;');
+    const displayScore = r.overall_score != null ? Math.round(r.overall_score * 100) : (r.score || 0);
+    const cls  = _scoreColor(displayScore);
+    const q    = (r.question || '').slice(0, 55);
+    const notes = (r.evaluation_notes || r.reasoning || '').replace(/</g, '&lt;').slice(0, 120);
+    const pctFmt = v => v == null ? '<span style="color:#333">—</span>'
+      : `<span class="${_scoreColor(Math.round(v*100))}">${Math.round(v*100)}%</span>`;
     return `<tr>
-      <td style="color:#A0A0A0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.question || ''}">${q}${r.question && r.question.length > 60 ? '…' : ''}</td>
-      <td style="color:#666;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.response || ''}">${res}${r.response && r.response.length > 80 ? '…' : ''}</td>
-      <td style="font-weight:700;font-size:13px" class="${cls}">${r.score}</td>
+      <td style="color:#A0A0A0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.question||'').replace(/"/g,'&quot;')}">${q}${r.question && r.question.length > 55 ? '…' : ''}</td>
+      <td style="font-weight:700;font-size:13px" class="${cls}">${displayScore}%</td>
+      <td>${pctFmt(r.task_adherence)}</td>
+      <td>${pctFmt(r.tool_call_accuracy)}</td>
+      <td>${pctFmt(r.intent_resolution)}</td>
       <td><span class="verdict-badge verdict-${r.verdict}">${r.verdict}</span></td>
-      <td style="color:#666;font-size:11px">${rsn}</td>
+      <td style="color:#555;font-size:10px;max-width:200px">${notes}${notes.length >= 120 ? '…' : ''}</td>
     </tr>`;
   }).join('');
+}
+
+function _scoreBadgeHtml(r) {
+  const displayScore = r.overall_score != null ? Math.round(r.overall_score * 100) : (r.score || 0);
+  return `<span class="eval-score-badge ${_scoreColor(displayScore)}">
+    ${displayScore}% <span class="verdict-badge verdict-${r.verdict}">${r.verdict}</span>
+  </span>
+  <button class="eval-toggle-btn" id="mtbtn-${r.exchange_id}"
+    onclick="toggleMetrics('${r.exchange_id}')">▼ metrics</button>`;
 }
 
 async function loadConversations() {
@@ -1891,27 +2028,40 @@ async function loadConversations() {
       return;
     }
     document.getElementById('conv-count').textContent = sessions.length + ' sessions';
+    // Populate exchange data map for use during evaluation
+    sessions.forEach(s => {
+      (s.exchanges || []).forEach(ex => {
+        _exchangeData[ex.exchange_id] = ex;
+      });
+    });
     list.innerHTML = sessions.map(s => {
       const sid   = s.session_id;
       const short = sid.length > 22 ? sid.slice(0, 10) + '…' + sid.slice(-8) : sid;
       const date  = s.updated_at ? fmtTime(s.updated_at) : '';
-      const count = s.exchanges.length;
-      const exHtml = s.exchanges.map(ex => {
+      const exs   = s.exchanges || [];
+      const count = exs.length;
+      const lastExId = exs.length ? exs[exs.length - 1].exchange_id : null;
+
+      const exHtml = exs.map(ex => {
         const cached = _evalCache[ex.exchange_id];
-        const scoreBadge = cached
-          ? `<span class="eval-score-badge ${_scoreColor(cached.score)}">
-               ${cached.score} <span class="verdict-badge verdict-${cached.verdict}">${cached.verdict}</span>
-             </span>`
+        const footerContent = cached
+          ? _scoreBadgeHtml(cached) + _renderMetricsPanel(ex.exchange_id, cached)
           : `<button class="eval-session-eval-btn" id="ebtn-${ex.exchange_id}"
                onclick="evaluateExchange('${ex.exchange_id}','${sid}',this)">Evaluate</button>`;
         return `<div class="eval-exchange">
           <div class="eval-exchange-q">${ex.question.replace(/</g,'&lt;')}</div>
-          <div class="eval-exchange-a">${(ex.response || '').replace(/</g,'&lt;')}</div>
+          <div class="eval-exchange-a">${(ex.response||'').replace(/</g,'&lt;')}</div>
           <div class="eval-exchange-footer">
-            <div id="score-${ex.exchange_id}">${scoreBadge}</div>
+            <div id="score-${ex.exchange_id}">${footerContent}</div>
           </div>
         </div>`;
       }).join('');
+
+      const evalLatestBtn = lastExId
+        ? `<button class="eval-session-eval-btn" style="margin-left:4px"
+             onclick="event.stopPropagation();evaluateExchange('${lastExId}','${sid}',null)">Eval Latest</button>`
+        : '';
+
       return `<div class="eval-session-item">
         <div class="eval-session-hdr" onclick="toggleSession('${sid}')">
           <span class="eval-session-caret" id="caret-${sid}">▶</span>
@@ -1919,6 +2069,7 @@ async function loadConversations() {
           <span class="eval-session-meta">${count} msg${count !== 1 ? 's' : ''} · ${date}</span>
           <button class="eval-session-eval-btn" style="margin-left:8px"
             onclick="event.stopPropagation();evaluateSession('${sid}')">Eval All</button>
+          ${evalLatestBtn}
         </div>
         <div class="eval-session-body" id="sess-${sid}">${exHtml}</div>
       </div>`;
@@ -1929,64 +2080,94 @@ async function loadConversations() {
 }
 
 function toggleSession(sid) {
-  const body   = document.getElementById('sess-' + sid);
-  const caret  = document.getElementById('caret-' + sid);
+  const body  = document.getElementById('sess-' + sid);
+  const caret = document.getElementById('caret-' + sid);
   const isOpen = body.classList.toggle('open');
   if (caret) { caret.textContent = isOpen ? '▼' : '▶'; caret.classList.toggle('open', isOpen); }
 }
 
 async function evaluateExchange(exchangeId, sessionId, btnEl) {
+  const scoreDiv = document.getElementById('score-' + exchangeId);
   if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
-  try {
-    // Find question/response from the rendered DOM data
-    const scoreDiv = document.getElementById('score-' + exchangeId);
-    const exchEl   = scoreDiv ? scoreDiv.closest('.eval-exchange') : null;
-    const question = exchEl ? exchEl.querySelector('.eval-exchange-q').textContent.trim() : '';
-    const response = exchEl ? exchEl.querySelector('.eval-exchange-a').textContent.trim() : '';
+  if (scoreDiv) scoreDiv.innerHTML = `<span class="eval-spin"></span><span style="font-size:11px;color:#666">Evaluating…</span>`;
 
+  const ex = _exchangeData[exchangeId] || {};
+  try {
     const result = await apiFetch('/api/evaluation/evaluate-exchange', {
-      method: 'POST',
+      method:  'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({exchange_id: exchangeId, session_id: sessionId, question, response}),
+      body: JSON.stringify({
+        exchange_id: exchangeId,
+        session_id:  sessionId,
+        question:    ex.question    || '',
+        response:    ex.response    || '',
+        tool_calls:  ex.tool_calls  || '',
+        rag_context: ex.rag_context || '',
+      }),
     });
-    if (!result) return;
+    if (!result) { if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Evaluate'; } return; }
     _evalCache[exchangeId] = result;
     if (scoreDiv) {
-      scoreDiv.innerHTML = `<span class="eval-score-badge ${_scoreColor(result.score)}">
-        ${result.score} <span class="verdict-badge verdict-${result.verdict}">${result.verdict}</span>
-      </span>`;
+      scoreDiv.innerHTML = _scoreBadgeHtml(result) + _renderMetricsPanel(exchangeId, result);
     }
     loadEvaluationResults();
   } catch(e) {
+    if (scoreDiv) scoreDiv.innerHTML = `<button class="eval-session-eval-btn" id="ebtn-${exchangeId}"
+      onclick="evaluateExchange('${exchangeId}','${sessionId}',this)">Evaluate</button>`;
     if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Evaluate'; }
   }
 }
 
 async function evaluateSession(sessionId) {
-  // Disable all exchange buttons in this session
-  const body = document.getElementById('sess-' + sessionId);
-  if (body) body.querySelectorAll('.eval-session-eval-btn').forEach(b => {
-    b.disabled = true; b.textContent = '…';
+  const sessBody = document.getElementById('sess-' + sessionId);
+  // Collect exchange IDs that are currently showing an Evaluate button (unevaluated)
+  const pendingEids = [];
+  if (sessBody) sessBody.querySelectorAll('.eval-exchange').forEach(el => {
+    const footer = el.querySelector('[id^="score-"]');
+    if (footer && footer.querySelector('.eval-session-eval-btn')) {
+      const eid = footer.id.replace('score-', '');
+      pendingEids.push(eid);
+      footer.innerHTML = `<span class="eval-spin"></span><span style="font-size:11px;color:#666">Evaluating…</span>`;
+    }
   });
+  // Disable the Eval All / Eval Latest buttons in the session header
+  const sessionHdr = sessBody ? sessBody.previousElementSibling : null;
+  const hdrBtns = sessionHdr ? sessionHdr.querySelectorAll('.eval-session-eval-btn') : [];
+  hdrBtns.forEach(b => { b.disabled = true; b.textContent = '…'; });
+
+  const _restoreOnError = () => {
+    pendingEids.forEach(eid => {
+      const sd = document.getElementById('score-' + eid);
+      if (sd && sd.querySelector('.eval-spin')) {
+        sd.innerHTML = `<button class="eval-session-eval-btn" id="ebtn-${eid}"
+          onclick="evaluateExchange('${eid}','${sessionId}',this)">Evaluate</button>`;
+      }
+    });
+    hdrBtns.forEach(b => { b.disabled = false; b.textContent = b.textContent.includes('Latest') ? 'Eval Latest' : 'Eval All'; });
+  };
+
   try {
     const result = await apiFetch('/api/evaluation/evaluate-session', {
-      method: 'POST',
+      method:  'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({session_id: sessionId}),
     });
-    if (!result) return;
-    result.results.forEach(r => {
+    if (!result) { _restoreOnError(); return; }
+    (result.results || []).forEach(r => {
       _evalCache[r.exchange_id] = r;
       const scoreDiv = document.getElementById('score-' + r.exchange_id);
       if (scoreDiv) {
-        scoreDiv.innerHTML = `<span class="eval-score-badge ${_scoreColor(r.score)}">
-          ${r.score} <span class="verdict-badge verdict-${r.verdict}">${r.verdict}</span>
-        </span>`;
+        scoreDiv.innerHTML = _scoreBadgeHtml(r) + _renderMetricsPanel(r.exchange_id, r);
       }
+    });
+    hdrBtns.forEach(b => {
+      b.disabled = false;
+      b.textContent = b.textContent.includes('Latest') ? 'Eval Latest' : 'Eval All';
     });
     loadEvaluationResults();
   } catch(e) {
     console.error('evaluateSession error:', e);
+    _restoreOnError();
   }
 }
 

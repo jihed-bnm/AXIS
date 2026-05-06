@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import os
 import secrets
 import smtplib
@@ -741,6 +742,12 @@ def etl_status(user: dict = Depends(get_current_user)):
 
 # ── Evaluation table bootstrap ────────────────────────────────────────────────
 
+def _exchange_id(session_id: str, question: str, response: str = "") -> str:
+    """Stable, content-addressed exchange ID so truncation never causes cache collisions."""
+    h = hashlib.md5(f"{session_id}:{question}:{response[:80]}".encode()).hexdigest()[:12]
+    return f"{session_id}_{h}"
+
+
 def _init_evaluations_table() -> None:
     try:
         with engine.connect() as conn:
@@ -885,9 +892,8 @@ async def evaluation_conversations(user: dict = Depends(require_admin), response
             SELECT id, updated_at, messages
             FROM sessions
             WHERE id NOT LIKE 'eval-session-%%'
-              AND updated_at > NOW() - INTERVAL '7 days'
-            ORDER BY updated_at DESC
-            LIMIT 10
+            ORDER BY updated_at DESC NULLS LAST
+            LIMIT 30
         """)
         result = []
         for row in rows:
@@ -897,17 +903,21 @@ async def evaluation_conversations(user: dict = Depends(require_admin), response
                     msgs = json.loads(msgs)
                 except Exception:
                     msgs = []
-            # Build human→assistant pairs
+            # Build human→assistant pairs with stable content-hash IDs
             exchanges = []
             i = 0
             while i < len(msgs) - 1:
                 m = msgs[i]
                 nxt = msgs[i + 1]
                 if m.get("role") == "human" and nxt.get("role") == "assistant":
+                    q = m.get("content", "")
+                    r = nxt.get("content", "")
                     exchanges.append({
-                        "exchange_id": f"{row['id']}_{len(exchanges)}",
-                        "question":    m.get("content", ""),
-                        "response":    nxt.get("content", ""),
+                        "exchange_id": _exchange_id(row["id"], q, r),
+                        "question":    q,
+                        "response":    r,
+                        "tool_calls":  nxt.get("tool_calls", "") or "",
+                        "rag_context": nxt.get("rag_context", "") or "",
                         "timestamp":   row["updated_at"].isoformat() if row.get("updated_at") else None,
                     })
                     i += 2
@@ -918,7 +928,7 @@ async def evaluation_conversations(user: dict = Depends(require_admin), response
             result.append({
                 "session_id": row["id"],
                 "updated_at": row["updated_at"].isoformat() if row.get("updated_at") else None,
-                "exchanges":  exchanges[-5:],   # last 5 per session
+                "exchanges":  exchanges,   # all exchanges in the session
             })
         return result
     except Exception as exc:
@@ -942,6 +952,27 @@ def _init_exchange_evaluations_table() -> None:
                 )
             """))
             conn.commit()
+            # Auto-add multi-metric columns (idempotent — IF NOT EXISTS)
+            for col_def in (
+                "overall_score       NUMERIC(4,3)",
+                "task_adherence      NUMERIC(4,3)",
+                "tool_call_accuracy  NUMERIC(4,3)",
+                "intent_resolution   NUMERIC(4,3)",
+                "context_relevance   NUMERIC(4,3)",
+                "retrieval_precision NUMERIC(4,3)",
+                "hit_rate            NUMERIC(4,3)",
+                "reciprocal_rank     NUMERIC(4,3)",
+                "ndcg                NUMERIC(4,3)",
+                "evaluation_notes    TEXT",
+            ):
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE public.axis_exchange_evaluations "
+                        f"ADD COLUMN IF NOT EXISTS {col_def}"
+                    ))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
     except Exception as exc:
         print(f"[AXIS] axis_exchange_evaluations init warning: {exc}")
 
@@ -954,79 +985,264 @@ class ExchangeEvalRequest(BaseModel):
     session_id:  Optional[str] = None
     question:    str
     response:    str
+    tool_calls:  Optional[str] = ""
+    rag_context: Optional[str] = ""
 
 
-async def _judge_exchange(question: str, response: str) -> dict:
-    import httpx, re
-    prompt = f"""You are a strict evaluator for an ERP AI assistant.
-You must be critical and accurate in your scoring.
+def _compute_overall(
+    task: float, tool_acc: float, intent: float,
+    ctx_rel, retr_prec, hit, rr, ndcg_v,
+) -> float:
+    if ctx_rel is not None:
+        score = (
+            task * 0.25 + tool_acc * 0.20 + intent * 0.20
+            + ctx_rel * 0.15 + retr_prec * 0.10
+            + hit * 0.03 + rr * 0.03 + ndcg_v * 0.04
+        )
+    else:
+        score = task * (0.25 / 0.65) + tool_acc * (0.20 / 0.65) + intent * (0.20 / 0.65)
+    return round(max(0.0, min(1.0, score)), 3)
 
-User question: {question}
-Agent response: {response}
 
-Scoring rules — be strict:
-- If the response says "I cannot", "I don't know", "error", or fails to answer → score 0-30, FAIL
-- If the response is vague, generic, or gives no specific data → score 30-50, FAIL or PARTIAL
-- If the response partially answers but misses key information → score 50-69, PARTIAL
-- If the response directly answers with specific correct data → score 70-85, PASS
-- If the response is complete, accurate, and includes relevant details → score 86-100, PASS
+async def _judge_exchange(
+    question: str, response: str,
+    tool_calls: str = "", rag_context: str = "",
+) -> dict:
+    import httpx, re as _re
 
-Be especially critical if:
-- A factual question gets a non-factual answer
-- The agent lists companies/deals instead of giving a count when count was asked
-- The response is in the wrong language (question was in English, response in French = -20 points)
-- The response asks clarifying questions instead of answering
-
-Respond ONLY with this exact JSON format, nothing else:
-{{"score": <integer 0-100>, "verdict": "<PASS|PARTIAL|FAIL>", "reasoning": "<one specific sentence about what was correct or wrong>"}}"""
+    has_rag = bool((rag_context or "").strip())
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(
-                "http://localhost:11434/api/generate",
-                json={"model": "qwen2.5:7b", "prompt": prompt, "stream": False, "format": "json"},
-            )
-            resp.raise_for_status()
-            raw = resp.json().get("response", "{}")
-            raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
-            parsed  = json.loads(raw)
-            score   = max(0, min(100, int(parsed.get("score", 0))))
-            verdict = str(parsed.get("verdict", "FAIL")).upper()
-            if verdict not in ("PASS", "PARTIAL", "FAIL"):
+        tc_list = json.loads(tool_calls) if tool_calls else []
+    except Exception:
+        tc_list = []
+    tool_calls_display = json.dumps(tc_list, indent=2) if tc_list else "None"
+
+    rag_block = (
+        f"RAG CONTEXT RETRIEVED:\n{(rag_context or '')[:600]}"
+        if has_rag else
+        "RAG CONTEXT RETRIEVED: None — no RAG retrieval for this exchange."
+    )
+    rag_metrics_block = """
+RAG METRICS (score 0.0–1.0 each — required because RAG was used):
+
+context_relevance — How relevant was the retrieved context to the user's query?
+  1.0 = Context contains the exact data needed (user asked about Company X, context has Company X records)
+  0.5 = Same domain but wrong entities (user asked about Company X, context has other companies)
+  0.0 = Completely unrelated content
+
+retrieval_precision — What fraction of retrieved chunks was actually useful?
+  1.0 = All chunks contributed to the answer
+  0.5 = About half useful, rest off-topic
+  0.0 = No chunks were useful
+
+hit_rate — Was at least one relevant document retrieved? (binary)
+  1.0 = Yes, at least one chunk was relevant
+  0.0 = No, zero relevant chunks
+
+reciprocal_rank — Rank of first relevant chunk (1/rank):
+  1.0 = First chunk relevant | 0.5 = Second | 0.33 = Third | 0.0 = None relevant
+
+ndcg — How well-ordered are chunks by relevance?
+  1.0 = Perfect ordering (most relevant first)
+  0.5 = Partial ordering (some good chunks buried)
+  0.0 = Inverse or random ordering
+""" if has_rag else ""
+
+    rag_null_instruction = (
+        "Set context_relevance, retrieval_precision, hit_rate, reciprocal_rank, ndcg to null — RAG was NOT used."
+        if not has_rag else ""
+    )
+
+    prompt = f"""You are a strict evaluator for an ERP AI assistant. Score this exchange independently on each metric.
+
+USER QUERY: {question}
+
+AGENT RESPONSE: {response}
+
+TOOL CALLS MADE: {tool_calls_display}
+
+{rag_block}
+
+AVAILABLE TOOLS: list_companies, list_contacts, list_deals, create_company, create_contact, create_deal,
+update_deal, update_contact, list_invoices, get_invoice, create_invoice, update_invoice,
+get_revenue_summary, generate_chart, list_saved_charts
+
+--- SCORING RUBRICS ---
+
+AGENT METRICS (always required, never null):
+
+task_adherence — Did the agent complete exactly what was asked?
+  1.0 = Fully completed: count asked → number given; create asked → confirmed created; list asked → list shown
+  0.5 = Partially: asked for 3 things got 2; asked for count but listed items; answer vague or incomplete
+  0.0 = Failed: "I cannot", error message, answered different question, no action when action required
+  STRICT: list instead of count = 0.5. Error/refusal = 0.0.
+
+tool_call_accuracy — Was the right tool called with correct parameters?
+  AUTO-SCORE: If TOOL CALLS MADE contains "source": "deterministic_bypass", score 1.0 immediately — the tool was dispatched by deterministic routing and is always correct by construction.
+  1.0 = Correct tool + correct params (right entity filter, right company name, confirmed=False for writes)
+  0.5 = Correct tool + wrong/missing params (no filter when needed, missing required field)
+  0.0 = Wrong tool, no tool called for a factual query, or tool call failed with error
+  STRICT: tool_calls="None" for a factual ERP question (not a greeting) = 0.0.
+
+intent_resolution — Did the agent correctly understand what the user wanted?
+  1.0 = Perfect: asked about Company X → answered about X; asked for count → gave count; right language
+  0.5 = Partial: understood domain but missed specifics; right topic, wrong entity; slightly off intent
+  0.0 = Complete misunderstanding: wrong entity type, wrong action, wrong language when bilingual available
+{rag_metrics_block}
+{rag_null_instruction}
+
+Respond with ONLY a JSON object, no markdown, no explanation outside JSON:
+{{"task_adherence":<float>,"tool_call_accuracy":<float>,"intent_resolution":<float>,"context_relevance":<float or null>,"retrieval_precision":<float or null>,"hit_rate":<float or null>,"reciprocal_rank":<float or null>,"ndcg":<float or null>,"evaluation_notes":"<one sentence per metric separated by semicolons>"}}"""
+
+    def _clamp(v, nullable: bool = False):
+        if v is None:
+            return None
+        try:
+            f = float(v)
+            return round(max(0.0, min(1.0, f)), 3)
+        except (TypeError, ValueError):
+            return None if nullable else 0.0
+
+    def _parse_response(raw: str) -> dict | None:
+        raw = _re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            pass
+        # Regex fallback: extract key:value pairs
+        pairs = _re.findall(r'"(\w+)":\s*([\d.]+|null)', raw)
+        if not pairs:
+            return None
+        result = {}
+        for k, v in pairs:
+            result[k] = None if v == "null" else float(v)
+        notes_m = _re.search(r'"evaluation_notes"\s*:\s*"([^"]*)"', raw)
+        if notes_m:
+            result["evaluation_notes"] = notes_m.group(1)
+        return result if result else None
+
+    import logging as _logging
+    _jlog = _logging.getLogger("axis.judge")
+    last_exc = None
+    for _attempt in range(2):
+        try:
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                resp = await client.post(
+                    "http://localhost:11434/api/generate",
+                    json={"model": "qwen2.5:7b", "prompt": prompt, "stream": False, "format": "json"},
+                )
+                resp.raise_for_status()
+                raw = resp.json().get("response", "{}")
+                parsed = _parse_response(raw)
+                if parsed is None:
+                    continue
+
+                task      = _clamp(parsed.get("task_adherence"),      nullable=False) or 0.0
+                tool_acc  = _clamp(parsed.get("tool_call_accuracy"),  nullable=False) or 0.0
+                intent    = _clamp(parsed.get("intent_resolution"),   nullable=False) or 0.0
+                ctx_rel   = _clamp(parsed.get("context_relevance"),   nullable=True)
+                retr_prec = _clamp(parsed.get("retrieval_precision"), nullable=True)
+                hit       = _clamp(parsed.get("hit_rate"),            nullable=True)
+                rr        = _clamp(parsed.get("reciprocal_rank"),     nullable=True)
+                ndcg_v    = _clamp(parsed.get("ndcg"),                nullable=True)
+
+                # Enforce: if we sent RAG context, RAG metrics must not all be null
+                if has_rag and ctx_rel is None:
+                    ctx_rel = retr_prec = hit = rr = ndcg_v = 0.5
+
+                overall = _compute_overall(task, tool_acc, intent, ctx_rel, retr_prec, hit, rr, ndcg_v)
+                score   = round(overall * 100)
                 verdict = "PASS" if score >= 70 else ("PARTIAL" if score >= 40 else "FAIL")
-            return {"score": score, "verdict": verdict, "reasoning": str(parsed.get("reasoning", ""))}
-    except Exception as exc:
-        return {"score": 0, "verdict": "FAIL", "reasoning": f"Judge error: {exc}"}
+                notes   = str(parsed.get("evaluation_notes", ""))
+
+                return {
+                    "score": score, "verdict": verdict, "overall_score": overall,
+                    "task_adherence": task, "tool_call_accuracy": tool_acc,
+                    "intent_resolution": intent, "context_relevance": ctx_rel,
+                    "retrieval_precision": retr_prec, "hit_rate": hit,
+                    "reciprocal_rank": rr, "ndcg": ndcg_v, "evaluation_notes": notes,
+                }
+        except Exception as exc:
+            last_exc = exc
+            _jlog.error(f"[Judge] attempt {_attempt + 1} failed: {exc!r}")
+            continue
+
+    _jlog.error(f"[Judge] all attempts exhausted. last_exc={last_exc!r}")
+    return {
+        "score": 0, "verdict": "FAIL", "overall_score": 0.0,
+        "task_adherence": 0.0, "tool_call_accuracy": 0.0, "intent_resolution": 0.0,
+        "context_relevance": None, "retrieval_precision": None, "hit_rate": None,
+        "reciprocal_rank": None, "ndcg": None,
+        "evaluation_notes": f"Judge failed: {last_exc}",
+    }
 
 
 @router.post("/api/evaluation/evaluate-exchange")
 async def evaluate_exchange(body: ExchangeEvalRequest, user: dict = Depends(require_admin)):
-    # Return cached result if already evaluated
-    cached = _one(
-        "SELECT score, verdict, reasoning FROM public.axis_exchange_evaluations WHERE exchange_id = :eid",
-        {"eid": body.exchange_id},
-    )
-    if cached:
-        return {"exchange_id": body.exchange_id, **cached}
-
-    judgment = await _judge_exchange(body.question, body.response)
-    with engine.connect() as conn:
-        conn.execute(
-            text("""
-                INSERT INTO public.axis_exchange_evaluations
-                    (exchange_id, session_id, question, response, score, verdict, reasoning)
-                VALUES (:eid, :sid, :q, :r, :sc, :v, :rs)
-            """),
-            {
-                "eid": body.exchange_id,
-                "sid": body.session_id,
-                "q":   body.question[:2000],
-                "r":   body.response[:4000],
-                "sc":  judgment["score"],
-                "v":   judgment["verdict"],
-                "rs":  judgment["reasoning"],
-            },
+    import logging as _lg
+    _elog = _lg.getLogger("axis.eval")
+    _elog.info(f"[evaluate-exchange] exchange_id={body.exchange_id!r}")
+    # Return cached result if already evaluated (check for new schema columns)
+    try:
+        cached = _one(
+            """SELECT score, verdict, reasoning, overall_score, task_adherence, tool_call_accuracy,
+                      intent_resolution, context_relevance, retrieval_precision, hit_rate,
+                      reciprocal_rank, ndcg, evaluation_notes
+               FROM public.axis_exchange_evaluations WHERE exchange_id = :eid""",
+            {"eid": body.exchange_id},
         )
-        conn.commit()
+        if cached and cached.get("task_adherence") is not None:
+            return {"exchange_id": body.exchange_id, **cached}
+    except Exception as exc:
+        _elog.warning(f"[evaluate-exchange] cache SELECT failed (columns missing?): {exc!r}")
+        # Columns not yet in DB — continue to judge without cache check
+
+    judgment = await _judge_exchange(
+        body.question, body.response,
+        body.tool_calls or "", body.rag_context or "",
+    )
+    _elog.info(f"[evaluate-exchange] judge returned score={judgment['score']} verdict={judgment['verdict']}")
+    try:
+        with engine.connect() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO public.axis_exchange_evaluations
+                        (exchange_id, session_id, question, response,
+                         score, verdict, reasoning,
+                         overall_score, task_adherence, tool_call_accuracy,
+                         intent_resolution, context_relevance, retrieval_precision,
+                         hit_rate, reciprocal_rank, ndcg, evaluation_notes)
+                    VALUES
+                        (:eid, :sid, :q, :r,
+                         :sc, :v, :rs,
+                         :overall, :task, :tool_acc,
+                         :intent, :ctx_rel, :retr_prec,
+                         :hit, :rr, :ndcg, :notes)
+                """),
+                {
+                    "eid":       body.exchange_id,
+                    "sid":       body.session_id,
+                    "q":         body.question[:2000],
+                    "r":         body.response[:4000],
+                    "sc":        judgment["score"],
+                    "v":         judgment["verdict"],
+                    "rs":        judgment.get("evaluation_notes", ""),
+                    "overall":   judgment["overall_score"],
+                    "task":      judgment["task_adherence"],
+                    "tool_acc":  judgment["tool_call_accuracy"],
+                    "intent":    judgment["intent_resolution"],
+                    "ctx_rel":   judgment["context_relevance"],
+                    "retr_prec": judgment["retrieval_precision"],
+                    "hit":       judgment["hit_rate"],
+                    "rr":        judgment["reciprocal_rank"],
+                    "ndcg":      judgment["ndcg"],
+                    "notes":     judgment["evaluation_notes"],
+                },
+            )
+            conn.commit()
+    except Exception as exc:
+        _elog.error(f"[evaluate-exchange] INSERT failed: {exc!r}")
+        raise HTTPException(500, f"DB write failed: {exc}")
     return {"exchange_id": body.exchange_id, **judgment}
 
 
@@ -1036,7 +1252,9 @@ class SessionEvalRequest(BaseModel):
 
 @router.post("/api/evaluation/evaluate-session")
 async def evaluate_session(body: SessionEvalRequest, user: dict = Depends(require_admin)):
-    # Rebuild exchanges for this session
+    import logging as _lg
+    _slog = _lg.getLogger("axis.eval")
+    _slog.info(f"[evaluate-session] session_id={body.session_id!r}")
     row = _one(
         "SELECT id, updated_at, messages FROM sessions WHERE id = :sid",
         {"sid": body.session_id},
@@ -1055,44 +1273,84 @@ async def evaluate_session(body: SessionEvalRequest, user: dict = Depends(requir
     while i < len(msgs) - 1:
         m, nxt = msgs[i], msgs[i + 1]
         if m.get("role") == "human" and nxt.get("role") == "assistant":
+            q = m.get("content", "")
+            r = nxt.get("content", "")
             exchanges.append({
-                "exchange_id": f"{body.session_id}_{len(exchanges)}",
+                "exchange_id": _exchange_id(body.session_id, q, r),
                 "session_id":  body.session_id,
-                "question":    m.get("content", ""),
-                "response":    nxt.get("content", ""),
+                "question":    q,
+                "response":    r,
+                "tool_calls":  nxt.get("tool_calls", "") or "",
+                "rag_context": nxt.get("rag_context", "") or "",
             })
             i += 2
         else:
             i += 1
 
     results = []
-    for ex in exchanges[-5:]:
-        cached = _one(
-            "SELECT score, verdict, reasoning FROM public.axis_exchange_evaluations WHERE exchange_id = :eid",
-            {"eid": ex["exchange_id"]},
-        )
-        if cached:
-            results.append({"exchange_id": ex["exchange_id"], **cached})
-            continue
-        judgment = await _judge_exchange(ex["question"], ex["response"])
-        with engine.connect() as conn:
-            conn.execute(
-                text("""
-                    INSERT INTO public.axis_exchange_evaluations
-                        (exchange_id, session_id, question, response, score, verdict, reasoning)
-                    VALUES (:eid, :sid, :q, :r, :sc, :v, :rs)
-                """),
-                {
-                    "eid": ex["exchange_id"],
-                    "sid": body.session_id,
-                    "q":   ex["question"][:2000],
-                    "r":   ex["response"][:4000],
-                    "sc":  judgment["score"],
-                    "v":   judgment["verdict"],
-                    "rs":  judgment["reasoning"],
-                },
+    for ex in exchanges:
+        try:
+            cached = _one(
+                """SELECT score, verdict, overall_score, task_adherence, tool_call_accuracy,
+                          intent_resolution, context_relevance, retrieval_precision, hit_rate,
+                          reciprocal_rank, ndcg, evaluation_notes
+                   FROM public.axis_exchange_evaluations WHERE exchange_id = :eid""",
+                {"eid": ex["exchange_id"]},
             )
-            conn.commit()
+            if cached and cached.get("task_adherence") is not None:
+                results.append({"exchange_id": ex["exchange_id"], **cached})
+                continue
+        except Exception as exc:
+            _slog.warning(f"[evaluate-session] cache SELECT failed: {exc!r}")
+
+        judgment = await _judge_exchange(
+            ex["question"], ex["response"],
+            ex["tool_calls"], ex["rag_context"],
+        )
+        _slog.info(
+            f"[evaluate-session] {ex['exchange_id']!r} → "
+            f"score={judgment['score']} verdict={judgment['verdict']}"
+        )
+        try:
+            with engine.connect() as conn:
+                conn.execute(
+                    text("""
+                        INSERT INTO public.axis_exchange_evaluations
+                            (exchange_id, session_id, question, response,
+                             score, verdict, reasoning,
+                             overall_score, task_adherence, tool_call_accuracy,
+                             intent_resolution, context_relevance, retrieval_precision,
+                             hit_rate, reciprocal_rank, ndcg, evaluation_notes)
+                        VALUES
+                            (:eid, :sid, :q, :r,
+                             :sc, :v, :rs,
+                             :overall, :task, :tool_acc,
+                             :intent, :ctx_rel, :retr_prec,
+                             :hit, :rr, :ndcg, :notes)
+                    """),
+                    {
+                        "eid":       ex["exchange_id"],
+                        "sid":       body.session_id,
+                        "q":         ex["question"][:2000],
+                        "r":         ex["response"][:4000],
+                        "sc":        judgment["score"],
+                        "v":         judgment["verdict"],
+                        "rs":        judgment.get("evaluation_notes", ""),
+                        "overall":   judgment["overall_score"],
+                        "task":      judgment["task_adherence"],
+                        "tool_acc":  judgment["tool_call_accuracy"],
+                        "intent":    judgment["intent_resolution"],
+                        "ctx_rel":   judgment["context_relevance"],
+                        "retr_prec": judgment["retrieval_precision"],
+                        "hit":       judgment["hit_rate"],
+                        "rr":        judgment["reciprocal_rank"],
+                        "ndcg":      judgment["ndcg"],
+                        "notes":     judgment["evaluation_notes"],
+                    },
+                )
+                conn.commit()
+        except Exception as exc:
+            _slog.error(f"[evaluate-session] INSERT failed for {ex['exchange_id']!r}: {exc!r}")
         results.append({"exchange_id": ex["exchange_id"], **judgment})
 
     scores = [r["score"] for r in results]
@@ -1105,7 +1363,10 @@ def evaluation_results(user: dict = Depends(require_admin)):
     try:
         rows = _query("""
             SELECT eval_id, exchange_id, session_id, question, response,
-                   score, verdict, reasoning, evaluated_at
+                   score, verdict, reasoning, evaluated_at,
+                   overall_score, task_adherence, tool_call_accuracy,
+                   intent_resolution, context_relevance, retrieval_precision,
+                   hit_rate, reciprocal_rank, ndcg, evaluation_notes
             FROM public.axis_exchange_evaluations
             ORDER BY evaluated_at DESC
             LIMIT 50

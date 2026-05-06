@@ -33,17 +33,19 @@ def list_invoices(status: Optional[str] = None, company_name: Optional[str] = No
             company = db.query(Company).filter(Company.name.ilike(f"%{company_name}%")).first()
             if company:
                 query = query.filter(Invoice.company_id == company.id)
+        total = query.count()
         invoices = query.order_by(Invoice.created_at.desc()).limit(50).all()
         if not invoices:
             return "No invoices found."
-        lines = [f"Found {len(invoices)} invoices:"]
+        rows = [
+            f"Showing {len(invoices)} of {total} results:",
+            "| ID | Invoice # | Company | Status | Total (TND) | Due Date |",
+            "|---|---|---|---|---|---|",
+        ]
         for inv in invoices:
             company = db.query(Company).filter(Company.id == inv.company_id).first()
-            lines.append(
-                f"  [{inv.id}] {inv.invoice_number} | {company.name if company else '?'} | "
-                f"{inv.status.upper()} | {inv.total:,.0f} TND | Due: {inv.due_date or 'N/A'}"
-            )
-        return "\n".join(lines)
+            rows.append(f"| {inv.id} | {inv.invoice_number} | {company.name if company else '?'} | {inv.status.upper()} | {inv.total:,.0f} | {inv.due_date or 'N/A'} |")
+        return "\n".join(rows)
     finally:
         db.close()
 
@@ -80,19 +82,36 @@ def get_invoice(invoice_number: Optional[str] = None, invoice_id: Optional[int] 
 
 
 @tool
-def get_revenue_summary(month: Optional[int] = None, year: Optional[int] = None) -> str:
+def get_revenue_summary(month: Optional[int] = None, year: Optional[int] = None, quarter: Optional[int] = None) -> str:
     """Sum of paid invoice totals. This measures collected revenue (money received), not deal pipeline value. Use this when the user asks about revenue, cash collected, or invoicing performance."""
     db = get_session()
     try:
         query = db.query(func.sum(Invoice.total)).filter(Invoice.status == "paid")
-        if month:
-            query = query.filter(extract("month", Invoice.paid_at) == month)
-        if year:
-            query = query.filter(extract("year", Invoice.paid_at) == year)
+        if quarter:
+            start_m = (quarter - 1) * 3 + 1
+            query = query.filter(extract("month", Invoice.paid_at).between(start_m, start_m + 2))
+            if year:
+                query = query.filter(extract("year", Invoice.paid_at) == year)
+        else:
+            if month:
+                query = query.filter(extract("month", Invoice.paid_at) == month)
+            if year:
+                query = query.filter(extract("year", Invoice.paid_at) == year)
         total = query.scalar() or 0
         pending = db.query(func.sum(Invoice.total)).filter(Invoice.status.in_(["sent", "draft"])).scalar() or 0
         overdue = db.query(func.sum(Invoice.total)).filter(Invoice.status == "overdue").scalar() or 0
-        period = f" for {month}/{year}" if month or year else " (all time)"
+        if quarter and year:
+            period = f" for Q{quarter} {year}"
+        elif quarter:
+            period = f" for Q{quarter}"
+        elif month and year:
+            period = f" for {month}/{year}"
+        elif year:
+            period = f" for {year}"
+        elif month:
+            period = f" for month {month}"
+        else:
+            period = " (all time)"
         return (
             f"Revenue summary{period}:\n"
             f"  Collected (paid):  {total:>15,.0f} TND\n"
