@@ -178,7 +178,10 @@ input{outline:none;font-family:'Inter',sans-serif}
 .typing-dot:nth-child(2){animation-delay:.15s}
 .typing-dot:nth-child(3){animation-delay:.3s}
 @keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-.agent-input-area{padding:16px 20px;border-top:1px solid #1E1E1E;background:#111111;display:flex;gap:10px;flex-shrink:0}
+.agent-suggestions{display:flex;gap:6px;flex-wrap:wrap;padding:8px 20px 0;flex-shrink:0}
+.suggestion-chip{background:#1A1A1A;border:1px solid #1E1E1E;border-radius:20px;color:#888;font-size:11px;font-weight:500;padding:5px 12px;transition:all .2s ease;cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif}
+.suggestion-chip:hover{background:#6C63FF1A;border-color:#6C63FF55;color:#A09AFF}
+.agent-input-area{padding:10px 20px 16px;border-top:1px solid #1E1E1E;background:#111111;display:flex;gap:10px;flex-shrink:0}
 .agent-input{flex:1;background:#1A1A1A;border:1px solid #1E1E1E;border-radius:8px;padding:10px 14px;color:#F0F0F0;font-size:13px;transition:border-color .2s ease}
 .agent-input:focus{border-color:#6C63FF}
 .agent-input::placeholder{color:#666}
@@ -351,6 +354,37 @@ input{outline:none;font-family:'Inter',sans-serif}
 #chart-modal-close{background:none;border:none;color:#888;cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;border-radius:6px;transition:color .15s}
 #chart-modal-close:hover{color:#F0F0F0}
 #chart-modal-plot{flex:1;min-height:0;padding:12px}
+
+/* ── Confirm Modal ────────────────────────────────────────────────────── */
+@keyframes confirmBackdropIn{from{opacity:0}to{opacity:1}}
+@keyframes confirmCardIn{from{opacity:0;transform:scale(.88) translateY(-12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#confirm-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+#confirm-modal-backdrop.open{display:flex;animation:confirmBackdropIn .2s ease}
+#confirm-modal{background:#161616;border:1px solid #2A2A2A;border-radius:14px;padding:28px 28px 22px;width:360px;max-width:90vw;box-shadow:0 16px 48px rgba(0,0,0,.7);animation:confirmCardIn .25s cubic-bezier(.34,1.56,.64,1)}
+#confirm-modal-icon{width:40px;height:40px;border-radius:50%;background:#FF4D4D1A;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+#confirm-modal-title{font-size:15px;font-weight:700;color:#F0F0F0;margin-bottom:8px}
+#confirm-modal-message{font-size:13px;color:#888;line-height:1.6;margin-bottom:24px}
+.confirm-modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.confirm-modal-cancel{background:#1E1E1E;border:1px solid #2A2A2A;border-radius:8px;color:#888;font-size:13px;font-weight:600;padding:9px 20px;transition:all .2s ease;font-family:'Inter',sans-serif}
+.confirm-modal-cancel:hover{background:#2A2A2A;color:#F0F0F0}
+.confirm-modal-confirm{background:#E53935;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;padding:9px 20px;transition:filter .2s ease;font-family:'Inter',sans-serif}
+.confirm-modal-confirm:hover{filter:brightness(1.15)}
+
+/* ── Welcome Overlay ──────────────────────────────────────────────────── */
+@keyframes welcomeIn{from{opacity:0;transform:scale(.9) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#welcome-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#welcome-overlay.open{display:flex}
+#welcome-card{background:linear-gradient(145deg,#141414 0%,#111111 100%);border:1px solid #2A2A2A;border-radius:18px;padding:36px 40px;width:400px;max-width:90vw;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.8);animation:welcomeIn .4s cubic-bezier(.34,1.56,.64,1)}
+.welcome-icon{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#6C63FF,#5a54d4);display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+#welcome-name{font-size:22px;font-weight:700;color:#F0F0F0;margin-bottom:8px}
+#welcome-sub{font-size:13px;color:#666;margin-bottom:24px;line-height:1.6}
+.welcome-tips{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;text-align:left}
+.welcome-tip{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:#1A1A1A;border-radius:8px;border:1px solid #1E1E1E}
+.welcome-tip-icon{width:24px;height:24px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.welcome-tip-text{font-size:12px;color:#888;line-height:1.5}
+.welcome-tip-text strong{color:#F0F0F0;display:block;margin-bottom:2px}
+#welcome-btn{background:#6C63FF;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;padding:12px 32px;transition:filter .2s ease;font-family:'Inter',sans-serif;cursor:pointer}
+#welcome-btn:hover{filter:brightness(1.15)}
 </style>
 </head>
 <body>
@@ -470,6 +504,13 @@ input{outline:none;font-family:'Inter',sans-serif}
     <!-- Topbar -->
     <div id="topbar">
       <span id="page-title">Dashboard</span>
+      <div class="etl-controls">
+        <div class="etl-indicator">
+          <div class="etl-dot idle" id="etl-dot"></div>
+          <span class="etl-label" id="etl-label">Idle</span>
+        </div>
+        <button id="etl-trigger-btn" onclick="triggerETL()" style="display:none">Run ETL</button>
+      </div>
     </div>
 
     <!-- Content -->
@@ -671,6 +712,11 @@ input{outline:none;font-family:'Inter',sans-serif}
                 <div class="msg-tag tag-orchestrator">Orchestrator</div>
                 <div class="msg-bubble">Hello! I'm the AXIS Agent. I can help you analyze sales pipeline, invoicing data, or answer questions about your operational data. What would you like to know?</div>
               </div>
+            </div>
+            <div class="agent-suggestions" id="agent-suggestions">
+              <button class="suggestion-chip" onclick="fillSuggestion(this)">Top clients this month?</button>
+              <button class="suggestion-chip" onclick="fillSuggestion(this)">Show overdue invoices</button>
+              <button class="suggestion-chip" onclick="fillSuggestion(this)">Win rate by quarter</button>
             </div>
             <div class="agent-input-area">
               <input class="agent-input" id="agent-input" type="text" placeholder="Ask about deals, revenue, clients..." />
@@ -916,6 +962,59 @@ input{outline:none;font-family:'Inter',sans-serif}
   Chart saved — <a onclick="navigate('charts')">view in My Charts</a>
 </div>
 
+<!-- ═══════════════════════════════════════════ CONFIRM MODAL ════════════ -->
+<div id="confirm-modal-backdrop" onclick="closeConfirmModal(event)">
+  <div id="confirm-modal">
+    <div id="confirm-modal-icon">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M10 6v5M10 14h.01" stroke="#FF4D4D" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="10" cy="10" r="8" stroke="#FF4D4D" stroke-width="1.5" fill="none"/>
+      </svg>
+    </div>
+    <div id="confirm-modal-title">Are you sure?</div>
+    <div id="confirm-modal-message">This action cannot be undone.</div>
+    <div class="confirm-modal-btns">
+      <button class="confirm-modal-cancel" id="confirm-modal-cancel-btn">Cancel</button>
+      <button class="confirm-modal-confirm" id="confirm-modal-confirm-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ WELCOME OVERLAY ══════════ -->
+<div id="welcome-overlay" onclick="dismissWelcome(event)">
+  <div id="welcome-card">
+    <div class="welcome-icon">
+      <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
+        <rect x="4" y="27" width="56" height="10" rx="4" fill="#fff" transform="rotate(45 32 32)"/>
+        <rect x="4" y="27" width="56" height="10" rx="4" fill="#fff" transform="rotate(-45 32 32)"/>
+      </svg>
+    </div>
+    <div id="welcome-name">Welcome back!</div>
+    <div id="welcome-sub">Your intelligent ERP dashboard is ready.<br>Everything is up to date.</div>
+    <div class="welcome-tips">
+      <div class="welcome-tip">
+        <div class="welcome-tip-icon" style="background:#6C63FF22">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8L14 2L8 14L7 9L2 8Z" fill="#6C63FF"/></svg>
+        </div>
+        <div class="welcome-tip-text"><strong>Ask the Agent</strong>Analyse deals, revenue, clients and generate charts from natural language.</div>
+      </div>
+      <div class="welcome-tip">
+        <div class="welcome-tip-icon" style="background:#3ECF8E22">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="#3ECF8E"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="#3ECF8E"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="#3ECF8E"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="#3ECF8E"/></svg>
+        </div>
+        <div class="welcome-tip-text"><strong>Live Dashboard</strong>Sales &amp; Finance KPIs update automatically after each ETL run.</div>
+      </div>
+      <div class="welcome-tip">
+        <div class="welcome-tip-icon" style="background:#00D4FF22">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="8" width="3" height="6" rx="1" fill="#00D4FF"/><rect x="6" y="5" width="3" height="9" rx="1" fill="#00D4FF"/><rect x="11" y="2" width="3" height="12" rx="1" fill="#00D4FF"/></svg>
+        </div>
+        <div class="welcome-tip-text"><strong>My Charts</strong>Agent-generated charts are saved automatically — explore them anytime.</div>
+      </div>
+    </div>
+    <button id="welcome-btn" onclick="dismissWelcome()">Get Started</button>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════ JAVASCRIPT ═══════════ -->
 <script>
 'use strict';
@@ -1015,6 +1114,7 @@ async function login() {
     applyRBAC();
     const ls = document.getElementById('login-screen');
     ls.style.animation = 'fadeOut .5s ease forwards';
+    const _displayName = data.full_name ? data.full_name.split(' ')[0] : data.username;
     setTimeout(() => {
       ls.style.display = 'none';
       const app = document.getElementById('app');
@@ -1022,6 +1122,7 @@ async function login() {
       app.style.animation = 'fadeIn .5s ease';
       navigate('dashboard');
       startPolling();
+      setTimeout(() => showWelcomeOverlay(_displayName, false), 400);
     }, 480);
   } catch(e) {
     err.textContent = 'Connection error';
@@ -1759,21 +1860,28 @@ async function sendAgentMessage(overrideText) {
   }
 }
 
-async function clearAgentChat() {
-  try {
-    const sid = getSessionId();
-    await fetch(`/session/${sid}`, { method: 'DELETE' });
-  } catch(e) {}
-  localStorage.setItem(AGENT_SESSION_KEY, _generateUUID());
-  hideTyping();
-  clearConfirmActions();
-  const input = document.getElementById('agent-input');
-  const btn   = document.getElementById('agent-send-btn');
-  if (input) { input.disabled = false; input.value = ''; }
-  if (btn)   { btn.disabled = false; }
-  const msgs = document.getElementById('agent-messages');
-  msgs.innerHTML = '<div class="msg-agent"><div class="msg-tag tag-orchestrator">Orchestrator</div><div class="msg-bubble">Conversation cleared. How can I help you?</div></div>';
-  resetSubagents();
+function clearAgentChat() {
+  showConfirmModal({
+    title: 'Clear Chat History',
+    message: 'Clear all chat messages? This cannot be undone.',
+    confirmText: 'Clear',
+    onConfirm: async () => {
+      try {
+        const sid = getSessionId();
+        await fetch(`/session/${sid}`, { method: 'DELETE' });
+      } catch(e) {}
+      localStorage.setItem(AGENT_SESSION_KEY, _generateUUID());
+      hideTyping();
+      clearConfirmActions();
+      const input = document.getElementById('agent-input');
+      const btn   = document.getElementById('agent-send-btn');
+      if (input) { input.disabled = false; input.value = ''; }
+      if (btn)   { btn.disabled = false; }
+      const msgs = document.getElementById('agent-messages');
+      msgs.innerHTML = '<div class="msg-agent"><div class="msg-tag tag-orchestrator">Orchestrator</div><div class="msg-bubble">Conversation cleared. How can I help you?</div></div>';
+      resetSubagents();
+    }
+  });
 }
 
 // Wire agent input Enter key
@@ -1825,7 +1933,7 @@ async function loadCharts() {
         </div>
         <div class="my-chart-container" id="${plotId}"></div>
         <div class="my-chart-footer">
-          <span class="my-chart-time">${created}</span>
+          <span class="my-chart-time" data-iso="${chart.created_at || ''}">${created}</span>
           ${state.role === 'admin' ? `<button class="my-chart-delete-btn" onclick="deleteChart(${chart.chart_id})">Delete</button>` : ''}
         </div>`;
       grid.appendChild(card);
@@ -1846,6 +1954,7 @@ async function loadCharts() {
         }
       }, 100);
     });
+    setTimeout(_applyChartsFilter, 200);
   } catch(e) {
     console.error('loadCharts error:', e);
   }
@@ -1872,33 +1981,47 @@ function closeChartModal() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChartModal(); });
 
-async function deleteChart(chartId) {
-    if (!confirm('Delete this chart?')) return;
-    try {
+function deleteChart(chartId) {
+  showConfirmModal({
+    title: 'Delete Chart',
+    message: 'Delete this chart permanently?',
+    confirmText: 'Delete',
+    onConfirm: async () => {
+      try {
         const token = sessionStorage.getItem('axis_token');
         const res = await fetch(`/api/charts/${chartId}`, {
-            method: 'DELETE',
-            headers: token ? {'Authorization': `Bearer ${token}`} : {}
+          method: 'DELETE',
+          headers: token ? {'Authorization': `Bearer ${token}`} : {}
         });
-        if (!res.ok) {
-            console.error('Delete failed:', res.status, await res.text());
-            return;
-        }
+        if (!res.ok) { console.error('Delete failed:', res.status); return; }
         loadCharts();
-    } catch(e) {
+      } catch(e) {
         console.error('Delete chart error:', e);
+      }
     }
+  });
 }
 
-async function clearAllCharts() {
-  try {
-    const charts = await apiFetch('/api/charts');
-    if (!charts || charts.length === 0) return;
-    await Promise.all(charts.map(c => fetch(`/api/charts/${c.chart_id}`, { method: 'DELETE' })));
-    loadCharts();
-  } catch(e) {
-    console.error('clearAllCharts error:', e);
-  }
+function clearAllCharts() {
+  showConfirmModal({
+    title: 'Clear All Charts',
+    message: 'Delete all saved charts? This cannot be undone.',
+    confirmText: 'Clear All',
+    onConfirm: async () => {
+      try {
+        const charts = await apiFetch('/api/charts');
+        if (!charts || charts.length === 0) return;
+        const token = sessionStorage.getItem('axis_token');
+        await Promise.all(charts.map(c => fetch(`/api/charts/${c.chart_id}`, {
+          method: 'DELETE',
+          headers: token ? {'Authorization': `Bearer ${token}`} : {}
+        })));
+        loadCharts();
+      } catch(e) {
+        console.error('clearAllCharts error:', e);
+      }
+    }
+  });
 }
 
 // ── Evaluation ─────────────────────────────────────────────────────────────
@@ -2269,13 +2392,115 @@ function _showProvMsg(html, type) {
 }
 
 async function deleteUser(userId, username) {
-  if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
-  try {
-    await apiFetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
-    loadUsers();
-  } catch(e) {
-    alert(`Failed to delete user: ${e.message}`);
-  }
+  showConfirmModal({
+    title: 'Delete User',
+    message: `Delete "${username}"? This cannot be undone.`,
+    confirmText: 'Delete',
+    onConfirm: async () => {
+      try {
+        await apiFetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+        loadUsers();
+      } catch(e) {}
+    }
+  });
+}
+
+// ── Query Suggestions ─────────────────────────────────────────────────────
+
+function fillSuggestion(btn) {
+  const input = document.getElementById('agent-input');
+  if (!input) return;
+  input.value = btn.textContent.trim();
+  input.focus();
+}
+
+// ── Confirm Modal ─────────────────────────────────────────────────────────
+
+let _confirmCallback = null;
+
+function showConfirmModal({ title, message, confirmText = 'Confirm', onConfirm, onCancel } = {}) {
+  document.getElementById('confirm-modal-title').textContent   = title   || 'Are you sure?';
+  document.getElementById('confirm-modal-message').textContent = message || 'This action cannot be undone.';
+  document.getElementById('confirm-modal-confirm-btn').textContent = confirmText;
+  _confirmCallback = onConfirm || null;
+  const cancelBtn   = document.getElementById('confirm-modal-cancel-btn');
+  const confirmBtn  = document.getElementById('confirm-modal-confirm-btn');
+  cancelBtn.onclick  = () => { closeConfirmModal(); if (onCancel) onCancel(); };
+  confirmBtn.onclick = () => { closeConfirmModal(); if (_confirmCallback) _confirmCallback(); };
+  document.getElementById('confirm-modal-backdrop').classList.add('open');
+}
+
+function closeConfirmModal(e) {
+  if (e && e.target !== document.getElementById('confirm-modal-backdrop')) return;
+  document.getElementById('confirm-modal-backdrop').classList.remove('open');
+  _confirmCallback = null;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('confirm-modal-backdrop').classList.remove('open');
+});
+
+// ── Welcome Overlay ───────────────────────────────────────────────────────
+
+let _welcomeTimer = null;
+
+function showWelcomeOverlay(username, isFirstTime) {
+  const nameEl = document.getElementById('welcome-name');
+  const subEl  = document.getElementById('welcome-sub');
+  nameEl.textContent = isFirstTime ? `Welcome to AXIS, ${username}!` : `Welcome back, ${username}!`;
+  subEl.textContent  = isFirstTime
+    ? 'Your intelligent ERP dashboard is ready. Here are a few tips to get started.'
+    : 'Everything is up to date. Your dashboard is ready.';
+  const tips = document.querySelector('.welcome-tips');
+  if (tips) tips.style.display = isFirstTime ? 'flex' : 'none';
+  document.getElementById('welcome-overlay').classList.add('open');
+  if (_welcomeTimer) clearTimeout(_welcomeTimer);
+  _welcomeTimer = setTimeout(() => dismissWelcome(), 4000);
+}
+
+function dismissWelcome(e) {
+  if (e && e.target !== document.getElementById('welcome-overlay') && e.type !== 'click') return;
+  if (_welcomeTimer) { clearTimeout(_welcomeTimer); _welcomeTimer = null; }
+  const overlay = document.getElementById('welcome-overlay');
+  overlay.style.animation = 'confirmBackdropIn .25s ease reverse';
+  setTimeout(() => { overlay.classList.remove('open'); overlay.style.animation = ''; }, 230);
+}
+
+// ── My Charts — filter (Bug #2 fix) ─────────────────────────────────────
+
+function filterCharts(period) {
+  state.chartsFilter = period;
+  document.querySelectorAll('.chart-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.period === period);
+  });
+  _applyChartsFilter();
+}
+
+function _applyChartsFilter() {
+  const period  = state.chartsFilter;
+  const now     = new Date();
+  const grid    = document.getElementById('charts-grid');
+  if (!grid) return;
+  const cards   = grid.querySelectorAll('.my-chart-card');
+  let  visible  = 0;
+  cards.forEach(card => {
+    const timeEl = card.querySelector('.my-chart-time');
+    if (!timeEl || !timeEl.dataset.iso) { card.style.display = ''; visible++; return; }
+    const d = new Date(timeEl.dataset.iso);
+    let show = true;
+    if (period === 'year') {
+      show = d.getFullYear() === now.getFullYear();
+    } else if (period === 'quarter') {
+      const q = (m) => Math.floor(m / 3);
+      show = d.getFullYear() === now.getFullYear() && q(d.getMonth()) === q(now.getMonth());
+    } else if (period === 'month') {
+      show = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const empty = document.getElementById('charts-empty-state');
+  if (empty) empty.style.display = (visible === 0 && cards.length > 0) ? 'flex' : 'none';
 }
 </script>
 
