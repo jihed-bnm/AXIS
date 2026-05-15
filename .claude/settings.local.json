@@ -67,7 +67,10 @@
       "Bash(xargs -I{} taskkill /F /PID {})",
       "PowerShell(cd \"C:\\\\Users\\\\Jihed\\\\Desktop\\\\pfe\\\\erp-ai-agent\"; Get-ChildItem -Recurse | Where-Object { $_.Extension -in @\\(\".html\", \".js\", \".yml\", \".yaml\"\\) -and $_.FullName -notmatch \"node_modules\" } | Sort-Object FullName | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\Users\\\\Jihed\\\\Desktop\\\\pfe\\\\erp-ai-agent\\\\\", \"./\"\\) })",
       "PowerShell(cd \"C:\\\\Users\\\\Jihed\\\\Desktop\\\\pfe\\\\erp-ai-agent\"; Get-ChildItem -Recurse | Where-Object { $_.Extension -in @\\(\".json\", \".md\", \".sql\", \".env\", \".csv\", \".xlsx\"\\) -and $_.FullName -notmatch \"__pycache__\" -and $_.FullName -notmatch \"node_modules\" } | Sort-Object FullName | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\Users\\\\Jihed\\\\Desktop\\\\pfe\\\\erp-ai-agent\\\\\", \"./\"\\) })",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(venv\\\\Scripts\\\\pip install *)",
+      "Bash(venv/bin/pip install *)",
+      "Bash(\"venv/Scripts/pip.exe\" install *)"
     ]
   }
 }

@@ -31,7 +31,8 @@ def get_db():
 def create_tables():
     """Create tables for active modules (CRM and Invoicing only)."""
     # Import only the active models so Base.metadata only includes their tables.
-    import backend.models.crm_models      # noqa: F401
-    import backend.models.invoice_models  # noqa: F401
-    import backend.models.warehouse_models  # noqa: F401
+    import backend.models.crm_models             # noqa: F401
+    import backend.models.invoice_models         # noqa: F401
+    import backend.models.warehouse_models       # noqa: F401
+    import backend.models.dynamic_agent_models   # noqa: F401
     Base.metadata.create_all(bind=engine)
