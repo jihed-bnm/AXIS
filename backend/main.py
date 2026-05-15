@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
 import json
@@ -19,7 +20,9 @@ import uuid
 import os
 import re
 from datetime import datetime
+from pathlib import Path
 
+from sqlalchemy import text as _sql_text
 from backend.models.database import create_tables, get_session
 from backend.models.crm_models import Session as ChatSession
 from backend.agents.supervisor import run_agent, _is_positive_confirmation, _is_negative_confirmation, _WRITE_PREVIEW_PATTERNS
@@ -46,6 +49,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 app.include_router(axis_router)
 
@@ -90,6 +95,11 @@ class ChatResponse(BaseModel):
     requires_confirmation: bool
     module: str
     timestamp: str
+    chart_id: Optional[int] = None
+    chart_title: Optional[str] = None
+    chart_type: Optional[str] = None
+    chart_data: Optional[list] = None
+    chart_layout: Optional[dict] = None
 
 
 _MODULE_TAG_MAP = {
@@ -227,6 +237,28 @@ async def chat(request: ChatRequest, http_request: Request):
         session.updated_at = datetime.utcnow()
         db.commit()
 
+        # Extract inline chart payload when a chart was just created
+        _chart_inline: dict = {}
+        _cid_match = re.search(r'Chart ID:\s*(\d+)', response_text, re.IGNORECASE)
+        if _cid_match:
+            _cid = int(_cid_match.group(1))
+            try:
+                _row = db.execute(
+                    _sql_text("SELECT chart_id, title, chart_type, config FROM public.axis_charts WHERE chart_id = :cid"),
+                    {"cid": _cid}
+                ).fetchone()
+                if _row:
+                    _cfg = json.loads(_row[3]) if isinstance(_row[3], str) else _row[3]
+                    _chart_inline = {
+                        "chart_id": _row[0],
+                        "chart_title": _row[1],
+                        "chart_type": _row[2],
+                        "chart_data": _cfg.get("data"),
+                        "chart_layout": _cfg.get("layout"),
+                    }
+            except Exception as _ce:
+                logger.warning(f"[Chat] Inline chart fetch failed: {_ce}")
+
         return ChatResponse(
             session_id=session_id,
             message=response_text,
@@ -234,7 +266,12 @@ async def chat(request: ChatRequest, http_request: Request):
                 p in response_text for p in _WRITE_PREVIEW_PATTERNS
             ),
             module=_response_module(response_text),
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
+            chart_id=_chart_inline.get("chart_id"),
+            chart_title=_chart_inline.get("chart_title"),
+            chart_type=_chart_inline.get("chart_type"),
+            chart_data=_chart_inline.get("chart_data"),
+            chart_layout=_chart_inline.get("chart_layout"),
         )
 
     except Exception as e:

@@ -55,9 +55,6 @@ _CHART_FILTER_RE = re.compile(
 _CHART_KEYWORDS = [
     "bar chart", "line chart", "pie chart", "donut chart",
     "scatter chart", "funnel chart", "area chart",
-    "churn chart", "churn risk chart", "risk chart",
-    "prediction chart", "predictive chart",
-    "win probability chart", "deal prediction chart", "deal win chart",
     "create a chart", "generate a chart", "show me a chart",
     "create chart", "generate chart", "visualize", "visualisation", "visualization",
     "my charts", "saved charts", "list charts", "delete chart",

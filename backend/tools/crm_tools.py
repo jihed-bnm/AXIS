@@ -790,7 +790,8 @@ def get_at_risk_clients() -> str:
 @tool
 def predict_churn(company_name: str) -> str:
     """Predict the churn risk for a specific client company.
-    Returns the churn probability, risk level (High/Medium/Low), and the top contributing factors.
+    Returns the churn probability, risk level (High/Medium/Low), top contributing factors,
+    prioritised retention recommendations, and a business summary.
     Use when user asks about churn risk, client health, at-risk clients, or retention priorities."""
     from backend.ml.predictor import predict_company_churn
     try:
@@ -803,7 +804,22 @@ def predict_churn(company_name: str) -> str:
             "Top Contributing Factors:",
         ]
         for factor in result['top_factors']:
-            lines.append(f"  - {factor['feature']}: {factor['value']:.2f} (impact: {factor['importance']:.3f})")
+            val = factor['value']
+            val_str = f"{val*100:.0f}%" if 0 < val < 1 else f"{val:.2f}"
+            lines.append(f"  - {factor['feature']}: {val_str} (impact: {factor['importance']:.3f})")
+
+        if result.get('recommendations'):
+            lines.append("")
+            lines.append("Recommendations:")
+            for r in result['recommendations']:
+                lines.append(f"  [{r['priority']}] {r['category']}: {r['action']}")
+                lines.append(f"    Rationale: {r['rationale']}")
+
+        if result.get('summary'):
+            lines.append("")
+            lines.append("Summary:")
+            lines.append(result['summary'])
+
         return "\n".join(lines)
     except Exception as e:
         return f"Could not predict churn for '{company_name}': {str(e)}"

@@ -383,17 +383,19 @@ if __name__ == "__main__":
     print(f"Class distribution:\n{df_filtered['churn'].value_counts()}")
     print(f"Churn rate: {df_filtered['churn'].mean():.1%}")
 
-    # ── One-hot encode categorical columns ────────────────────────────────────
-    df_encoded = pd.get_dummies(
-        df_filtered, columns=["industry", "status"],
-        prefix=["industry", "status"], dummy_na=False,
-    )
+    # industry: static label — too few samples per category to learn meaningful
+    #   patterns; encodes company identity rather than churn behavior.
+    # status: direct data leakage — churn label is partly defined as status=="inactive",
+    #   so status_inactive would trivially predict the label it helped create.
+    _drop = {
+        "company_name", "client_age_months", "total_interactions",
+        "churn", "days_since_last_activity",
+        "industry", "status",
+    }
+    feature_cols = [c for c in df_filtered.columns if c not in _drop]
 
-    _drop = {"company_name", "client_age_months", "total_interactions", "churn", "days_since_last_activity"}
-    feature_cols = [c for c in df_encoded.columns if c not in _drop]
-
-    X = df_encoded[feature_cols].astype(float)
-    y = df_encoded["churn"].astype(int)
+    X = df_filtered[feature_cols].astype(float)
+    y = df_filtered["churn"].astype(int)
 
     print(f"Feature count: {X.shape[1]}")
     print(f"Churn distribution: {y.value_counts().to_dict()}")

@@ -1,0 +1,245 @@
+/* AXIS custom Shepherd.js theme — matches design tokens in axis.html */
+
+/* ── Dark overlay (80% opacity) ─────────────────────────────────────────── */
+.shepherd-modal-overlay-container {
+  fill: rgba(10, 23, 51, 0.82);
+  z-index: 9050;
+}
+
+/* ── Tooltip wrapper ─────────────────────────────────────────────────────── */
+.shepherd-element {
+  background: #FFFFFF;
+  border: 1px solid #D8E4F0;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(30, 50, 80, 0.20), 0 0 0 1px rgba(74, 144, 226, 0.08);
+  font-family: 'Inter', sans-serif;
+  max-width: 340px;
+  width: 340px;
+  z-index: 9100;
+}
+
+/* ── Arrow (speech-bubble tail) ──────────────────────────────────────────── */
+.shepherd-arrow,
+.shepherd-arrow::before {
+  width: 16px;
+  height: 16px;
+}
+
+.shepherd-arrow::before {
+  background: #FFFFFF;
+  border: 1px solid #D8E4F0;
+  border-radius: 2px;
+}
+
+.shepherd-element[data-popper-placement^="right"] > .shepherd-arrow {
+  left: -8px;
+}
+.shepherd-element[data-popper-placement^="left"] > .shepherd-arrow {
+  right: -8px;
+}
+.shepherd-element[data-popper-placement^="bottom"] > .shepherd-arrow {
+  top: -8px;
+}
+.shepherd-element[data-popper-placement^="top"] > .shepherd-arrow {
+  bottom: -8px;
+}
+
+/* ── Content container ───────────────────────────────────────────────────── */
+.shepherd-content {
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* ── Header — hide (persona row lives inside text) ───────────────────────── */
+.shepherd-header {
+  background: transparent;
+  padding: 0;
+  min-height: 0;
+  display: none;
+}
+.shepherd-title { display: none; }
+.shepherd-cancel-icon { display: none; }
+
+/* ── Text body ───────────────────────────────────────────────────────────── */
+.shepherd-text {
+  padding: 0;
+  font-size: 13px;
+  color: #5A7090;
+  line-height: 1.6;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.shepherd-footer {
+  padding: 0 14px 14px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.shepherd-button {
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+  line-height: 1.4;
+}
+
+.shepherd-button-primary {
+  background: #4A90E2;
+  color: #FFFFFF;
+}
+.shepherd-button-primary:not(:disabled):hover {
+  background: #2E7BD4;
+}
+
+.shepherd-button-secondary {
+  background: transparent;
+  color: #8AAAC8;
+  border: 1px solid #D8E4F0;
+}
+.shepherd-button-secondary:not(:disabled):hover {
+  color: #1E2D3D;
+  border-color: #8AAAC8;
+}
+
+/* ── Persona row (inside .shepherd-text) ─────────────────────────────────── */
+.axis-shp-persona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid rgba(216, 228, 240, 0.7);
+}
+
+.axis-shp-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1A3355 0%, #2D6BFF 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(45, 107, 255, 0.28);
+}
+
+.axis-shp-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.axis-shp-role {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: #8AAAC8;
+}
+
+.axis-shp-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E2D3D;
+  letter-spacing: -0.01em;
+}
+
+/* Inline close (X) button inside persona row */
+.axis-shp-close {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(216, 228, 240, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #8AAAC8;
+  font-size: 12px;
+  line-height: 1;
+  transition: all 0.15s;
+  font-family: 'Inter', sans-serif;
+  padding: 0;
+}
+.axis-shp-close:hover {
+  color: #1E2D3D;
+  background: rgba(0, 0, 0, 0.08);
+  border-color: #C2D4E8;
+}
+
+/* ── Narrative message ───────────────────────────────────────────────────── */
+.axis-shp-msg {
+  padding: 12px 14px 8px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #5A7090;
+  margin: 0;
+}
+
+/* ── Progress dots ───────────────────────────────────────────────────────── */
+.axis-shp-progress {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 14px 14px;
+}
+
+.axis-shp-dot {
+  height: 4px;
+  width: 4px;
+  border-radius: 2px;
+  background: #D8E4F0;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+.axis-shp-dot.active {
+  background: #4A90E2;
+  width: 16px;
+}
+
+/* ── Highlighted element: subtle glow ring ───────────────────────────────── */
+.shepherd-has-active-step {
+  outline: 2px solid rgba(74, 144, 226, 0.40) !important;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Sidebar "Replay Tour" button ────────────────────────────────────────── */
+.tour-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  background: rgba(74, 144, 226, 0.08);
+  border: 1px solid rgba(74, 144, 226, 0.18);
+  border-radius: 8px;
+  color: #63AEFF;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+  text-align: left;
+  letter-spacing: 0.01em;
+}
+.tour-btn:hover {
+  background: rgba(74, 144, 226, 0.18);
+  border-color: rgba(99, 174, 255, 0.5);
+  color: #FFFFFF;
+}

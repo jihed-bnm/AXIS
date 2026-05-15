@@ -143,6 +143,18 @@ def _one(sql: str, params: dict | None = None) -> dict:
     return rows[0] if rows else {}
 
 
+def _date_filter(col: str, year: Optional[int], month: Optional[int], params: dict) -> str:
+    """Return additional AND clauses for year/month filtering on a timestamp column."""
+    parts = []
+    if year is not None:
+        parts.append(f"EXTRACT(year  FROM {col}) = :df_year")
+        params["df_year"] = year
+    if month is not None:
+        parts.append(f"EXTRACT(month FROM {col}) = :df_month")
+        params["df_month"] = month
+    return (" AND " + " AND ".join(parts)) if parts else ""
+
+
 # ── Email helper ─────────────────────────────────────────────────────────────
 
 def _send_credentials_email(to_email: str, username: str, password: str, full_name: str) -> None:
@@ -323,51 +335,82 @@ def auth_me(user: dict = Depends(get_current_user)):
     }
 
 
+# ── Filter metadata ───────────────────────────────────────────────────────────
+
+@router.get("/api/filters/years")
+def filters_years(user: dict = Depends(get_current_user)):
+    """Return sorted list of years that have actual data in the warehouse."""
+    try:
+        rows = _query("""
+            SELECT DISTINCT yr FROM (
+                SELECT EXTRACT(year FROM invoice_date)::int AS yr
+                FROM warehouse.fact_revenue
+                WHERE invoice_date IS NOT NULL
+                UNION
+                SELECT EXTRACT(year FROM created_date)::int AS yr
+                FROM warehouse.fact_deals
+                WHERE created_date IS NOT NULL
+            ) sub
+            WHERE yr IS NOT NULL
+            ORDER BY yr DESC
+        """)
+        return [r["yr"] for r in rows]
+    except Exception as exc:
+        raise HTTPException(500, str(exc))
+
+
 # ── CRM endpoints ─────────────────────────────────────────────────────────────
 
 @router.get("/api/crm/kpis")
-def crm_kpis(user: dict = Depends(get_current_user)):
+def crm_kpis(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        dfd = _date_filter("created_date", year, month, params)
         rev = _one(
-            "SELECT COALESCE(SUM(total_amount),0) AS v "
-            "FROM warehouse.fact_revenue WHERE status='paid'"
-        )
-        deals = _one("SELECT COUNT(*) AS v FROM warehouse.fact_deals")
-        wl = _one("""
+            f"SELECT COALESCE(SUM(total_amount),0) AS v "
+            f"FROM warehouse.fact_revenue WHERE LOWER(status)='paid'{dfr}"
+        , params)
+        deals = _one(
+            f"SELECT COUNT(*) AS v FROM warehouse.fact_deals WHERE 1=1{dfd}"
+        , params)
+        wl = _one(f"""
             SELECT
-                COUNT(*) FILTER (WHERE status='won')                   AS won,
-                COUNT(*) FILTER (WHERE status IN ('won','lost'))        AS closed
-            FROM warehouse.fact_deals
-        """)
+                COUNT(*) FILTER (WHERE LOWER(status)='won')                   AS won,
+                COUNT(*) FILTER (WHERE LOWER(status) IN ('won','lost'))        AS closed
+            FROM warehouse.fact_deals WHERE 1=1{dfd}
+        """, params)
         pip = _one(
-            "SELECT COALESCE(SUM(value_tnd),0) AS v "
-            "FROM warehouse.fact_deals WHERE status='open'"
-        )
+            f"SELECT COALESCE(SUM(value_tnd),0) AS v "
+            f"FROM warehouse.fact_deals WHERE LOWER(status)='open'{dfd}"
+        , params)
         won    = int(wl.get("won")    or 0)
         closed = int(wl.get("closed") or 0)
         return {
-            "total_revenue":   float(rev.get("v")  or 0),
-            "total_deals":     int(deals.get("v")   or 0),
+            "total_revenue":   float(rev.get("v")   or 0),
+            "total_deals":     int(deals.get("v")    or 0),
             "win_rate":        round(won / closed * 100, 1) if closed else 0.0,
-            "active_pipeline": float(pip.get("v")  or 0),
+            "active_pipeline": float(pip.get("v")   or 0),
         }
     except Exception as exc:
         raise HTTPException(500, str(exc))
 
 
 @router.get("/api/crm/revenue-trend")
-def crm_revenue_trend(user: dict = Depends(get_current_user)):
+def crm_revenue_trend(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        rows = _query("""
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        rows = _query(f"""
             SELECT EXTRACT(year  FROM invoice_date)::int AS yr,
                    EXTRACT(month FROM invoice_date)::int AS mo,
                    SUM(total_amount)                     AS revenue
             FROM warehouse.fact_revenue
-            WHERE status='paid'
+            WHERE LOWER(status)='paid'
               AND invoice_date IS NOT NULL
-              AND invoice_date <= CURRENT_DATE
+              AND invoice_date <= CURRENT_DATE{dfr}
             GROUP BY 1,2 ORDER BY 1,2
-        """)
+        """, params)
         for r in rows:
             r["date"]    = f"{r.pop('yr')}-{int(r.pop('mo')):02d}-01"
             r["revenue"] = float(r["revenue"] or 0)
@@ -377,19 +420,21 @@ def crm_revenue_trend(user: dict = Depends(get_current_user)):
 
 
 @router.get("/api/crm/win-rate")
-def crm_win_rate(user: dict = Depends(get_current_user)):
+def crm_win_rate(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        rows = _query("""
+        params: dict = {}
+        dfd = _date_filter("created_date", year, month, params)
+        rows = _query(f"""
             SELECT quarter,
                    ROUND(
-                       COUNT(*) FILTER (WHERE status='won') * 100.0
+                       COUNT(*) FILTER (WHERE LOWER(status)='won') * 100.0
                        / NULLIF(COUNT(*), 0),
                    1) AS win_rate
             FROM warehouse.fact_deals
-            WHERE status IN ('won','lost')
+            WHERE LOWER(status) IN ('won','lost'){dfd}
             GROUP BY quarter
             ORDER BY MIN(created_date)
-        """)
+        """, params)
         for r in rows:
             r["win_rate"] = float(r["win_rate"] or 0)
         return rows
@@ -398,32 +443,43 @@ def crm_win_rate(user: dict = Depends(get_current_user)):
 
 
 @router.get("/api/crm/pipeline-stage")
-def crm_pipeline_stage(user: dict = Depends(get_current_user)):
+def crm_pipeline_stage(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        return _query("""
-            SELECT stage, COUNT(DISTINCT deal_ref) AS deal_count
-            FROM warehouse.fact_deals
-            WHERE stage IS NOT NULL
-            GROUP BY stage ORDER BY deal_count DESC
-        """)
+        params: dict = {}
+        dfd = _date_filter("created_at", year, month, params)
+        return _query(f"""
+            SELECT
+                CASE
+                    WHEN LOWER(status) IN ('won', 'lost') OR LOWER(stage) = 'closed'
+                    THEN 'Closed'
+                    ELSE INITCAP(LOWER(stage))
+                END AS stage,
+                COUNT(*) AS deal_count
+            FROM deals
+            WHERE is_deleted = FALSE
+              AND stage IS NOT NULL{dfd}
+            GROUP BY 1 ORDER BY deal_count DESC
+        """, params)
     except Exception as exc:
         raise HTTPException(500, str(exc))
 
 
 @router.get("/api/crm/top-clients")
-def crm_top_clients(user: dict = Depends(get_current_user)):
+def crm_top_clients(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        rows = _query("""
+        params: dict = {}
+        dfd = _date_filter("created_date", year, month, params)
+        rows = _query(f"""
             SELECT UPPER(TRIM(company_name)) AS company_name,
                    SUM(value_tnd)            AS total_value
             FROM warehouse.fact_deals
-            WHERE status='won'
+            WHERE LOWER(status)='won'
               AND company_name IS NOT NULL
-              AND value_tnd    IS NOT NULL
+              AND value_tnd    IS NOT NULL{dfd}
             GROUP BY UPPER(TRIM(company_name))
             ORDER BY total_value DESC
             LIMIT 10
-        """)
+        """, params)
         for r in rows:
             r["total_value"] = float(r["total_value"] or 0)
         return rows
@@ -432,23 +488,27 @@ def crm_top_clients(user: dict = Depends(get_current_user)):
 
 
 @router.get("/api/crm/new-vs-closed")
-def crm_new_vs_closed(user: dict = Depends(get_current_user)):
+def crm_new_vs_closed(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        new_rows = _query("""
+        params_n: dict = {}
+        params_c: dict = {}
+        dfn = _date_filter("created_date", year, month, params_n)
+        dfc = _date_filter("closed_date",  year, month, params_c)
+        new_rows = _query(f"""
             SELECT DATE_TRUNC('month', created_date)::date AS month,
                    COUNT(*) AS count
             FROM warehouse.fact_deals
-            WHERE created_date <= CURRENT_DATE
+            WHERE created_date <= CURRENT_DATE{dfn}
             GROUP BY 1 ORDER BY 1
-        """)
-        closed_rows = _query("""
+        """, params_n)
+        closed_rows = _query(f"""
             SELECT DATE_TRUNC('month', closed_date)::date AS month,
                    COUNT(*) AS count
             FROM warehouse.fact_deals
-            WHERE status IN ('won', 'lost') AND closed_date IS NOT NULL
-              AND closed_date <= CURRENT_DATE
+            WHERE LOWER(status) IN ('won', 'lost') AND closed_date IS NOT NULL
+              AND closed_date <= CURRENT_DATE{dfc}
             GROUP BY 1 ORDER BY 1
-        """)
+        """, params_c)
         return {
             "new_deals":    [{"month": str(r["month"]), "count": int(r["count"])} for r in new_rows],
             "closed_deals": [{"month": str(r["month"]), "count": int(r["count"])} for r in closed_rows],
@@ -458,14 +518,16 @@ def crm_new_vs_closed(user: dict = Depends(get_current_user)):
 
 
 @router.get("/api/crm/deal-size")
-def crm_deal_size(user: dict = Depends(get_current_user)):
+def crm_deal_size(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        return _query("""
+        params: dict = {}
+        dfd = _date_filter("created_date", year, month, params)
+        return _query(f"""
             SELECT deal_size_category, COUNT(*) AS deal_count
             FROM warehouse.fact_deals
-            WHERE deal_size_category IS NOT NULL
+            WHERE deal_size_category IS NOT NULL{dfd}
             GROUP BY deal_size_category ORDER BY deal_count DESC
-        """)
+        """, params)
     except Exception as exc:
         raise HTTPException(500, str(exc))
 
@@ -473,41 +535,47 @@ def crm_deal_size(user: dict = Depends(get_current_user)):
 # ── Finance endpoints ─────────────────────────────────────────────────────────
 
 @router.get("/api/finance/kpis")
-def finance_kpis(user: dict = Depends(get_current_user)):
+def finance_kpis(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        r = _one("""
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        r = _one(f"""
             SELECT
-                COALESCE(SUM(CASE WHEN status='paid'    THEN total_amount END),0) AS collected,
-                COALESCE(SUM(CASE WHEN status='pending' THEN total_amount END),0) AS pending,
-                COALESCE(SUM(CASE WHEN status='overdue' THEN total_amount END),0) AS overdue,
-                COUNT(*)                                                           AS total_count,
-                COUNT(CASE WHEN status='paid' THEN 1 END)                         AS paid_count
+                COALESCE(SUM(CASE WHEN LOWER(status)='paid'                       THEN total_amount END),0) AS collected,
+                COALESCE(SUM(CASE WHEN LOWER(status)='draft'                      THEN total_amount END),0) AS pending,
+                COALESCE(SUM(CASE WHEN LOWER(status)='overdue' OR is_overdue=true THEN total_amount END),0) AS overdue,
+                COALESCE(SUM(CASE WHEN LOWER(status)!='cancelled'                 THEN total_amount END),0) AS total_billed
             FROM warehouse.fact_revenue
-        """)
-        tc = int(r.get("total_count") or 0)
-        pc = int(r.get("paid_count")  or 0)
+            WHERE invoice_date IS NOT NULL{dfr}
+        """, params)
+        collected    = float(r.get("collected")    or 0)
+        pending      = float(r.get("pending")      or 0)
+        overdue      = float(r.get("overdue")      or 0)
+        total_billed = float(r.get("total_billed") or 0)
         return {
-            "collected":       float(r.get("collected") or 0),
-            "pending":         float(r.get("pending")   or 0),
-            "overdue":         float(r.get("overdue")   or 0),
-            "collection_rate": round(pc / tc * 100, 1) if tc else 0.0,
+            "collected":       collected,
+            "pending":         pending,
+            "overdue":         overdue,
+            "collection_rate": round(collected / total_billed * 100, 1) if total_billed else 0.0,
         }
     except Exception as exc:
         raise HTTPException(500, str(exc))
 
 
 @router.get("/api/finance/revenue-year")
-def finance_revenue_year(user: dict = Depends(get_current_user)):
+def finance_revenue_year(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        rows = _query("""
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        rows = _query(f"""
             SELECT EXTRACT(year FROM invoice_date)::int AS year,
-                   COALESCE(SUM(CASE WHEN status='paid'    THEN total_amount END),0) AS collected,
-                   COALESCE(SUM(CASE WHEN status='pending' THEN total_amount END),0) AS pending,
-                   COALESCE(SUM(CASE WHEN status='overdue' THEN total_amount END),0) AS overdue
+                   COALESCE(SUM(CASE WHEN LOWER(status)='paid'                       THEN total_amount END),0) AS collected,
+                   COALESCE(SUM(CASE WHEN LOWER(status)='draft'                      THEN total_amount END),0) AS pending,
+                   COALESCE(SUM(CASE WHEN LOWER(status)='overdue' OR is_overdue=true THEN total_amount END),0) AS overdue
             FROM warehouse.fact_revenue
-            WHERE invoice_date IS NOT NULL AND invoice_date <= CURRENT_DATE
+            WHERE invoice_date IS NOT NULL AND invoice_date <= CURRENT_DATE{dfr}
             GROUP BY 1 ORDER BY 1
-        """)
+        """, params)
         for r in rows:
             r["year"]      = int(r["year"])
             r["collected"] = float(r["collected"] or 0)
@@ -519,18 +587,20 @@ def finance_revenue_year(user: dict = Depends(get_current_user)):
 
 
 @router.get("/api/finance/cumulative")
-def finance_cumulative(user: dict = Depends(get_current_user)):
+def finance_cumulative(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        rows = _query("""
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        rows = _query(f"""
             SELECT EXTRACT(year  FROM invoice_date)::int AS yr,
                    EXTRACT(month FROM invoice_date)::int AS mo,
                    SUM(total_amount) AS monthly_revenue
             FROM warehouse.fact_revenue
-            WHERE status='paid'
+            WHERE LOWER(status)='paid'
               AND invoice_date IS NOT NULL
-              AND invoice_date <= CURRENT_DATE
+              AND invoice_date <= CURRENT_DATE{dfr}
             GROUP BY 1,2 ORDER BY 1,2
-        """)
+        """, params)
         cum, result = 0.0, []
         for r in rows:
             cum += float(r["monthly_revenue"] or 0)
@@ -544,9 +614,11 @@ def finance_cumulative(user: dict = Depends(get_current_user)):
 
 
 @router.get("/api/finance/payment-delay")
-def finance_payment_delay(user: dict = Depends(get_current_user)):
+def finance_payment_delay(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        rows = _query("""
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        rows = _query(f"""
             SELECT
                 CASE
                     WHEN payment_delay_days <= 0  THEN 'On Time'
@@ -556,9 +628,9 @@ def finance_payment_delay(user: dict = Depends(get_current_user)):
                 END AS delay_category,
                 COUNT(*) AS count
             FROM warehouse.fact_revenue
-            WHERE status='paid' AND payment_delay_days IS NOT NULL
+            WHERE LOWER(status)='paid' AND payment_delay_days IS NOT NULL{dfr}
             GROUP BY delay_category
-        """)
+        """, params)
         for r in rows:
             r["count"] = int(r["count"] or 0)
         return rows
@@ -567,32 +639,36 @@ def finance_payment_delay(user: dict = Depends(get_current_user)):
 
 
 @router.get("/api/finance/status-dist")
-def finance_status_dist(user: dict = Depends(get_current_user)):
+def finance_status_dist(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        return _query("""
-            SELECT status, COUNT(*) AS invoice_count
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        return _query(f"""
+            SELECT LOWER(status) AS status, COUNT(*) AS invoice_count
             FROM warehouse.fact_revenue
-            WHERE status IS NOT NULL AND invoice_date <= CURRENT_DATE
-            GROUP BY status ORDER BY invoice_count DESC
-        """)
+            WHERE status IS NOT NULL AND invoice_date <= CURRENT_DATE{dfr}
+            GROUP BY LOWER(status) ORDER BY invoice_count DESC
+        """, params)
     except Exception as exc:
         raise HTTPException(500, str(exc))
 
 
 @router.get("/api/finance/top-clients")
-def finance_top_clients(user: dict = Depends(get_current_user)):
+def finance_top_clients(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        rows = _query("""
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        rows = _query(f"""
             SELECT UPPER(TRIM(company_name)) AS company_name,
                    SUM(total_amount)         AS total_invoiced
             FROM warehouse.fact_revenue
             WHERE company_name IS NOT NULL
               AND total_amount  IS NOT NULL
-              AND invoice_date <= CURRENT_DATE
+              AND invoice_date <= CURRENT_DATE{dfr}
             GROUP BY UPPER(TRIM(company_name))
             ORDER BY total_invoiced DESC
             LIMIT 10
-        """)
+        """, params)
         for r in rows:
             r["total_invoiced"] = float(r["total_invoiced"] or 0)
         return rows
@@ -601,18 +677,20 @@ def finance_top_clients(user: dict = Depends(get_current_user)):
 
 
 @router.get("/api/finance/monthly")
-def finance_monthly(user: dict = Depends(get_current_user)):
+def finance_monthly(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
-        rows = _query("""
+        params: dict = {}
+        dfr = _date_filter("invoice_date", year, month, params)
+        rows = _query(f"""
             SELECT EXTRACT(year FROM invoice_date)::int AS year,
                    EXTRACT(month FROM invoice_date)::int AS month,
-                   COUNT(*) AS issued,
-                   COUNT(*) FILTER (WHERE status = 'paid') AS paid,
-                   COUNT(*) FILTER (WHERE status = 'overdue' OR is_overdue = true) AS overdue
+                   COUNT(*) FILTER (WHERE LOWER(status) != 'cancelled') AS issued,
+                   COUNT(*) FILTER (WHERE LOWER(status) = 'paid') AS paid,
+                   COUNT(*) FILTER (WHERE LOWER(status) = 'overdue' OR is_overdue = true) AS overdue
             FROM warehouse.fact_revenue
-            WHERE invoice_date IS NOT NULL AND invoice_date <= CURRENT_DATE
+            WHERE invoice_date IS NOT NULL AND invoice_date <= CURRENT_DATE{dfr}
             GROUP BY 1, 2 ORDER BY 1, 2
-        """)
+        """, params)
         for r in rows:
             r["year"]    = int(r["year"])
             r["month"]   = int(r["month"])
@@ -1362,12 +1440,7 @@ async def evaluate_session(body: SessionEvalRequest, user: dict = Depends(requir
 def evaluation_results(user: dict = Depends(require_admin)):
     try:
         rows = _query("""
-            SELECT eval_id, exchange_id, session_id, question, response,
-                   score, verdict, reasoning, evaluated_at,
-                   overall_score, task_adherence, tool_call_accuracy,
-                   intent_resolution, context_relevance, retrieval_precision,
-                   hit_rate, reciprocal_rank, ndcg, evaluation_notes
-            FROM public.axis_exchange_evaluations
+            SELECT * FROM public.axis_exchange_evaluations
             ORDER BY evaluated_at DESC
             LIMIT 50
         """)

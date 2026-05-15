@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "shepherd.js": "^15.2.2"
+  }
+}

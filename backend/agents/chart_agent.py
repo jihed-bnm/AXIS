@@ -11,26 +11,11 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 from backend.tools.chart_tools import ALL_CHART_TOOLS
-from backend.agents.tool_interceptor import safe_agent_run
+from backend.agents.tool_interceptor import safe_agent_run, _extract_tool_call, _find_tool
 from backend.agents.prompt_parts import (
     LANGUAGE_RULE, TOOL_CALL_ENFORCEMENT, OUTPUT_TAG_RULE,
 )
 
-_MULTI_FILTER_RE = re.compile(
-    r"(?:won|lost|open|closed|paid|overdue|pending|active|cancelled)"
-    r".*?\b(20\d{2})\b"
-    r"|"
-    r"\b(20\d{2})\b.*?(?:won|lost|open|closed|paid|overdue|pending|active|cancelled)",
-    re.IGNORECASE,
-)
-_UNSUPPORTED_COMPLEXITY_MSG = (
-    "⚠️ This chart request requires time-series aggregation or combined "
-    "status+year filtering, which goes beyond what the chart engine supports "
-    "directly. Try a simpler query — for example:\n"
-    "• \"create a bar chart of deal count by stage from fact_deals\"\n"
-    "• \"show total revenue by company as a pie chart\"\n"
-    "• \"create a funnel chart of deal stages\""
-)
 
 _FABRICATION_SUBSTRINGS = [
     # English — exact tool return phrasing
@@ -69,12 +54,6 @@ SYSTEM_PROMPT = f"""You are the AXIS Chart Generation Agent. You create Plotly c
 AXIS warehouse data. Your only tools are generate_chart, list_saved_charts, and delete_chart.
 
 ## TOOL USE IS MANDATORY: For every chart request, you MUST invoke generate_chart. Do not produce a textual response describing chart creation without first calling the tool. The tool is the only mechanism that creates charts; without a tool call, no chart exists. Failure to call the tool will cause the user's request to fail.
-
-## PREDICTION / RISK CHARTS:
-If the user asks for a churn chart, prediction chart, risk chart, win probability chart,
-or any ML-based chart, respond with exactly:
-"Predictive analytics charts are available in the Power BI dashboards, not the conversational interface."
-Do NOT call generate_chart for these requests.
 
 ## Available data sources and their columns:
 - fact_deals: deal_ref, company_name, title, stage, status, value_tnd, probability,
@@ -132,6 +111,22 @@ Example — "scatter chart of deal value vs days to close":
 Funnel: x_column is the stage/category dimension, y_column is 'count' or a numeric metric.
 Example — "funnel chart of deal stages":
   data_source=fact_deals, x_column=stage, y_column=count, aggregation=count, chart_type=funnel
+
+## Multiple filters (status + year, or any two conditions):
+Use filter_column/filter_value for the first condition and filter_column2/filter_value2 for the second.
+Year values (4-digit numbers) on date columns are handled automatically — pass them as a string.
+Example — "bar chart of won deals in 2024 by stage":
+  data_source=fact_deals, x_column=stage, y_column=count, aggregation=count, chart_type=bar,
+  filter_column=status, filter_value=won, filter_column2=created_date, filter_value2=2024
+
+Example — "line chart of paid invoices by month in 2025":
+  data_source=fact_revenue, x_column=invoice_date, x_truncation=month, y_column=total_amount,
+  aggregation=sum, chart_type=line, filter_column=status, filter_value=paid,
+  filter_column2=invoice_date, filter_value2=2025
+
+Example — "bar chart of lost deals by company in 2024":
+  data_source=fact_deals, x_column=company_name, y_column=count, aggregation=count, chart_type=bar,
+  filter_column=status, filter_value=lost, filter_column2=closed_date, filter_value2=2024
 
 ## Listing saved charts:
 When the user says "list my charts", "show my charts", "show saved charts", "what charts do I have",
@@ -199,10 +194,27 @@ def _is_list_intent(message: str) -> bool:
     return any(intent in msg_lower for intent in _LIST_INTENTS)
 
 
-def run_chart_agent(message: str, history: List[Dict] = None) -> str:
-    if _MULTI_FILTER_RE.search(message):
-        return _UNSUPPORTED_COMPLEXITY_MSG
+def _try_intercept_raw_call(response: str) -> Optional[str]:
+    """If response is a raw JSON tool-call, execute the tool and return its output.
+    Returns None if no valid tool-call JSON is found."""
+    if not response:
+        return None
+    raw_call = _extract_tool_call(response)
+    if not (raw_call and "name" in raw_call):
+        return None
+    params = raw_call.get("parameters") or raw_call.get("arguments") or {}
+    tool = _find_tool(raw_call["name"], ALL_CHART_TOOLS)
+    if tool is None:
+        return None
+    logger.warning(f"[Chart] Raw tool call intercepted: {raw_call['name']} — executing")
+    try:
+        return str(tool.invoke(params))
+    except Exception as te:
+        logger.error(f"[Chart] Intercepted tool execution failed: {te}", exc_info=True)
+        return None
 
+
+def run_chart_agent(message: str, history: List[Dict] = None) -> str:
     agent = _get_chart_agent()
     lc_history = []
     for msg in (history or []):
@@ -212,26 +224,52 @@ def run_chart_agent(message: str, history: List[Dict] = None) -> str:
             clean = re.sub(r"^\[[^\]]+\]\s*", "", msg.get("content", "").strip())
             lc_history.append(AIMessage(content=clean))
 
-    # No RAG in chart agent — LIST_INTENTS guard here is solely for formatter routing
     if _is_list_intent(message):
         return safe_agent_run(agent, ALL_CHART_TOOLS, message, lc_history, is_list_query=True)
 
-    # Invoke directly so we can inspect intermediate_steps for the fabrication guard.
-    # The guard runs AFTER both the primary path and the fallback path so neither can bypass it.
     response = ""
     steps = []
     try:
-        result = agent.invoke({
-            "input": message,
-            "chat_history": lc_history,
-        })
+        result = agent.invoke({"input": message, "chat_history": lc_history})
         response = result.get("output", "")
         steps = result.get("intermediate_steps", [])
     except Exception:
         logger.error("Chart agent direct invoke failed, falling back to safe_agent_run", exc_info=True)
-        response = safe_agent_run(agent, ALL_CHART_TOOLS, message, lc_history)
-        # safe_agent_run has no intermediate_steps; steps stays [] so guard still applies.
+        return safe_agent_run(agent, ALL_CHART_TOOLS, message, lc_history)
 
+    # ── No tool was called — attempt recovery ────────────────────────────────
+    if not steps:
+        # Pass 1: output may be raw JSON tool-call (Qwen sometimes does this)
+        intercepted = _try_intercept_raw_call(response)
+        if intercepted is not None:
+            return intercepted
+
+        # Pass 2: retry with an explicit tool-forcing directive
+        logger.warning("[Chart] No tool called on first attempt — retrying with directive")
+        forced = (
+            "CRITICAL: You did not call any tool. You MUST call generate_chart now. "
+            "Do NOT write a text response — invoke the tool with the correct parameters. "
+            f"Original request: {message}"
+        )
+        try:
+            retry_result = agent.invoke({"input": forced, "chat_history": lc_history})
+            retry_response = retry_result.get("output", "")
+            retry_steps = retry_result.get("intermediate_steps", [])
+            if retry_steps:
+                # Tool was called on retry — check fabrication then return
+                if _is_fabricated(retry_response, retry_steps):
+                    return _CHART_FABRICATION_MSG
+                return retry_response
+            # Retry also produced no steps — check for raw JSON one more time
+            intercepted2 = _try_intercept_raw_call(retry_response)
+            if intercepted2 is not None:
+                return intercepted2
+        except Exception:
+            logger.error("Chart retry invoke failed", exc_info=True)
+
+        return _CHART_FABRICATION_MSG
+
+    # ── Tool was called — belt-and-suspenders fabrication check ──────────────
     if _is_fabricated(response, steps):
         return _CHART_FABRICATION_MSG
     return response
