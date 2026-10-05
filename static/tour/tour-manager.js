@@ -89,17 +89,47 @@ const TourManager = (function () {
     // Ensure we start from the dashboard view before opening the tour
     if (typeof navigate === 'function') navigate('dashboard');
 
-    setTimeout(function () { _activeTour.start(); }, 380);
+    setTimeout(function () { _activeTour.start(); }, 100);
   }
 
   // ── Public: reset + replay ────────────────────────────────────────────────
 
-  function reset() {
-    // Resolve current username from app state (set during login)
-    const username = (window.state && state.user) || _activeUsername || null;
-    _clearDone(username);
-    start({ username: username, force: true });
+function reset() {
+  const username = (window.state && state.user) || _activeUsername || null;
+  _activeUsername = username;
+  _clearDone(username);
+
+  // Safely tear down the old instance
+  if (_activeTour) {
+    try {
+      _activeTour.off('cancel');
+      _activeTour.off('complete');
+      if (typeof _activeTour.isActive === 'function' && _activeTour.isActive()) {
+        _activeTour.cancel();
+      }
+      if (typeof _activeTour.destroy === 'function') {
+        _activeTour.destroy();
+      }
+    } catch (e) {
+      console.warn('[TourManager] cleanup error:', e);
+    }
+    _activeTour = null;
   }
+
+  // Navigate to dashboard first
+  if (typeof navigate === 'function') navigate('dashboard');
+
+  // Wait a fixed 500ms — enough for any view transition to finish rendering —
+  // then build a fresh Shepherd instance and start it.
+  setTimeout(function () {
+    _activeTour = _build();
+    if (!_activeTour) return;
+    const onEnd = () => _setDone(username);
+    _activeTour.on('complete', onEnd);
+    _activeTour.on('cancel', onEnd);
+    _activeTour.start();
+  }, 500);
+}
 
   // ── Public: inline ✕ cancel (called from onclick in persona header) ────────
 

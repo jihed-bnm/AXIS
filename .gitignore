@@ -4,3 +4,5 @@ logs/
 chroma_db/ 
 .env 
 *.pyc 
+data/staging/ 
+.claude/settings.local.json 

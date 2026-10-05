@@ -237,13 +237,42 @@ RULES: list[dict] = [
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
+def _fire_rules(rules: list[dict], feature_dict: dict, max_results: int) -> list[Recommendation]:
+    fired: list[Recommendation] = []
+    seen_categories: dict[str, int] = {}
+
+    for rule in rules:
+        try:
+            if not rule["condition"](feature_dict):
+                continue
+        except Exception:
+            continue
+
+        cat = rule["category"]
+        if seen_categories.get(cat, 0) >= 2:
+            continue
+        seen_categories[cat] = seen_categories.get(cat, 0) + 1
+
+        rat = rule["rationale"]
+        fired.append(Recommendation(
+            priority=rule["priority"],
+            category=cat,
+            action=rule["action"],
+            rationale=rat(feature_dict) if callable(rat) else rat,
+            trigger=rule["trigger"],
+        ))
+
+    fired.sort(key=lambda r: _PRIORITY_RANK.get(r.priority, 99))
+    return fired[:max_results]
+
+
 def generate_recommendations(
     feature_dict: dict,
     risk_level: str,
     max_results: int = 5,
 ) -> list[Recommendation]:
     """
-    Evaluate all rules against the feature dict and return up to max_results
+    Evaluate churn rules against the feature dict and return up to max_results
     Recommendation objects sorted by priority (Critical first).
 
     Args:
@@ -251,33 +280,162 @@ def generate_recommendations(
         risk_level:   "High" | "Medium" | "Low" (from ML model)
         max_results:  cap on number of recommendations returned
     """
-    fired: list[Recommendation] = []
-    seen_categories: dict[str, int] = {}  # category → count
+    return _fire_rules(RULES, feature_dict, max_results)
 
-    for rule in RULES:
-        try:
-            if not rule["condition"](feature_dict):
-                continue
-        except Exception:
-            continue
 
-        # Limit to 2 recommendations per category to avoid flooding
-        cat = rule["category"]
-        if seen_categories.get(cat, 0) >= 2:
-            continue
-        seen_categories[cat] = seen_categories.get(cat, 0) + 1
+# ── Deal rules ─────────────────────────────────────────────────────────────────
+# feature_dict must include "win_probability" (injected by deal_predictor before calling).
 
-        prio = rule["priority"]
-        rat = rule["rationale"]
-        rationale_str = rat(feature_dict) if callable(rat) else rat
+DEAL_RULES: list[dict] = [
 
-        fired.append(Recommendation(
-            priority=prio,
-            category=cat,
-            action=rule["action"],
-            rationale=rationale_str,
-            trigger=rule["trigger"],
-        ))
+    # ── Finance / Payment risk ────────────────────────────────────────────────
 
-    fired.sort(key=lambda r: _PRIORITY_RANK.get(r.priority, 99))
-    return fired[:max_results]
+    _rule(
+        id="deal_payment_delay_critical",
+        condition=lambda f: _v(f, "company_avg_payment_delay") > 60,
+        priority="Critical",
+        category="Finance",
+        action="Require advance payment or bank guarantee before closing — company has a history of severe payment delays",
+        rationale=lambda f: f"Company avg. payment delay is {_v(f,'company_avg_payment_delay'):.0f} days (critical threshold: 60)",
+        trigger="company_avg_payment_delay",
+    ),
+    _rule(
+        id="deal_payment_delay_high",
+        condition=lambda f: 30 < _v(f, "company_avg_payment_delay") <= 60,
+        priority="High",
+        category="Finance",
+        action="Negotiate milestone-based payment terms to reduce collection risk before deal closure",
+        rationale=lambda f: f"Company avg. payment delay is {_v(f,'company_avg_payment_delay'):.0f} days (high threshold: 30)",
+        trigger="company_avg_payment_delay",
+    ),
+    _rule(
+        id="deal_overdue_ratio_high",
+        condition=lambda f: _v(f, "company_overdue_ratio") > 0.40,
+        priority="High",
+        category="Finance",
+        action="Flag for legal and finance review — include strict payment terms clause in the contract",
+        rationale=lambda f: f"{_v(f,'company_overdue_ratio')*100:.0f}% of company invoices are overdue (threshold: 40%)",
+        trigger="company_overdue_ratio",
+    ),
+    _rule(
+        id="deal_low_payment_rate",
+        condition=lambda f: _v(f, "company_payment_rate", 1.0) < 0.60,
+        priority="High",
+        category="Finance",
+        action="Require a deposit or phased payment schedule — company payment rate is below acceptable threshold",
+        rationale=lambda f: f"Company payment rate is {_v(f,'company_payment_rate',1.0)*100:.0f}% (threshold: 60%)",
+        trigger="company_payment_rate",
+    ),
+
+    # ── Sales / Win probability ───────────────────────────────────────────────
+
+    _rule(
+        id="deal_very_low_win_prob",
+        condition=lambda f: _v(f, "win_probability") < 0.25,
+        priority="Critical",
+        category="Sales",
+        action="Escalate to sales manager immediately — review value proposition, outstanding objections, and make a formal go/no-go decision",
+        rationale=lambda f: f"ML-predicted win probability is {_v(f,'win_probability')*100:.0f}% (critical threshold: 25%)",
+        trigger="win_probability",
+    ),
+    _rule(
+        id="deal_low_win_prob",
+        condition=lambda f: 0.25 <= _v(f, "win_probability") < 0.40,
+        priority="High",
+        category="Sales",
+        action="Schedule a discovery call to surface objections — refresh the proposal with updated pricing or scope adjustments",
+        rationale=lambda f: f"ML-predicted win probability is {_v(f,'win_probability')*100:.0f}% (threshold: 40%)",
+        trigger="win_probability",
+    ),
+    _rule(
+        id="deal_low_historical_win_rate",
+        condition=lambda f: (
+            not math.isnan(f.get("company_historical_win_rate") or float("nan"))
+            and _v(f, "company_historical_win_rate", 1) < 0.20
+            and _v(f, "company_total_deals") >= 2
+        ),
+        priority="Medium",
+        category="Sales",
+        action="Conduct a competitive analysis — tailor the pitch to known differentiators given the low historical win rate with this company",
+        rationale=lambda f: f"Historical win rate with this company is {_v(f,'company_historical_win_rate',1)*100:.0f}% across {_v(f,'company_total_deals'):.0f} closed deals",
+        trigger="company_historical_win_rate",
+    ),
+    _rule(
+        id="deal_long_sales_cycle",
+        condition=lambda f: _v(f, "days_to_close") > 90,
+        priority="Medium",
+        category="Sales",
+        action="Propose a clear decision timeline with milestone check-ins — long sales cycles significantly increase drop-off risk",
+        rationale=lambda f: f"Estimated days to close is {_v(f,'days_to_close'):.0f} days (threshold: 90)",
+        trigger="days_to_close",
+    ),
+
+    # ── Engagement / Account health ───────────────────────────────────────────
+
+    _rule(
+        id="deal_high_churn_signals",
+        condition=lambda f: _v(f, "company_churn_signals") >= 3,
+        priority="High",
+        category="Customer Success",
+        action="Address underlying account dissatisfaction before advancing the deal — multiple churn signals indicate unresolved concerns",
+        rationale=lambda f: f"Company has {_v(f,'company_churn_signals'):.0f} churn-signal interactions on record",
+        trigger="company_churn_signals",
+    ),
+    _rule(
+        id="deal_no_positive_signals",
+        condition=lambda f: _v(f, "company_positive_signals") == 0 and _v(f, "company_total_activities") >= 3,
+        priority="Medium",
+        category="Engagement",
+        action="Gather explicit buying-intent signals — send a structured value assessment or demo follow-up survey",
+        rationale="No positive engagement signals recorded despite ongoing interaction history",
+        trigger="company_positive_signals",
+    ),
+    _rule(
+        id="deal_low_activity_frequency",
+        condition=lambda f: 0 < _v(f, "company_activity_frequency") < 0.5 and _v(f, "client_age_days") > 180,
+        priority="Low",
+        category="Engagement",
+        action="Increase pre-deal engagement cadence — low activity frequency reduces deal visibility and momentum",
+        rationale=lambda f: f"Company activity frequency is {_v(f,'company_activity_frequency'):.2f} interactions/month (below 0.5)",
+        trigger="company_activity_frequency",
+    ),
+
+    # ── Strategic / Deal size ─────────────────────────────────────────────────
+
+    _rule(
+        id="deal_high_value",
+        condition=lambda f: _v(f, "value_tnd") > 50_000,
+        priority="High",
+        category="Executive",
+        action="Escalate to senior account executive — high-value deal warrants an executive sponsor and a formal deal review",
+        rationale=lambda f: f"Deal value is {_v(f,'value_tnd'):,.0f} TND (above 50,000 TND strategic threshold)",
+        trigger="value_tnd",
+    ),
+    _rule(
+        id="deal_new_prospect_first_deal",
+        condition=lambda f: f.get("client_status") == "prospect" and _v(f, "company_total_deals") == 0,
+        priority="Medium",
+        category="Customer Success",
+        action="Present a tailored onboarding plan alongside the proposal — first-deal conversion requires strong post-sale confidence",
+        rationale="First deal with a prospect-stage company; onboarding readiness is a key conversion differentiator",
+        trigger="client_status",
+    ),
+]
+
+
+def generate_deal_recommendations(
+    feature_dict: dict,
+    win_probability: float,
+    max_results: int = 5,
+) -> list[Recommendation]:
+    """
+    Evaluate deal rules against the feature dict and return up to max_results
+    Recommendation objects sorted by priority (Critical first).
+
+    Args:
+        feature_dict:    raw feature values for one deal (from build_single_deal_features)
+        win_probability: calibrated win probability from the ML model (0–1)
+        max_results:     cap on number of recommendations returned
+    """
+    enriched = {**feature_dict, "win_probability": win_probability}
+    return _fire_rules(DEAL_RULES, enriched, max_results)

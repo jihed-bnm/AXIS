@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@11.2.0/dist/css/shepherd.css"/>
 <link rel="stylesheet" href="/static/tour/shepherd-theme.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
 <script src="https://cdn.jsdelivr.net/npm/shepherd.js@11.2.0/dist/js/shepherd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -47,6 +47,192 @@
   --shadow-md:0 4px 16px rgba(30,50,80,.12);
 }
 
+/* ── Dark Mode ───────────────────────────────────────────────────────────────── */
+html.dark{
+  --bg:#0f1923;
+  --bg2:#141f2b;
+  --surface:#192535;
+  --surface2:#1e2e40;
+  --border:#253648;
+  --border2:#2d4260;
+  /* Primary text — near-white for full readability */
+  --text:#e2e8f0;
+  /* Secondary text — medium-light blue-gray */
+  --text-muted:#9ab5cc;
+  /* Faint/label text — was #4a6a88 (dark navy, unreadable); now light enough for table headers & card labels */
+  --text-faint:#8aafc8;
+  --primary:#5a9ee8;
+  --primary-dark:#80baff;
+  --primary-light:rgba(74,144,226,.14);
+  --sidebar-bg:#0e1c2e;
+  --sidebar-border:#0a1522;
+  --sidebar-hover:rgba(255,255,255,.07);
+  --shadow:0 1px 4px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.18);
+  --shadow-md:0 4px 16px rgba(0,0,0,.38);
+  /* Semantic colors — light values readable on dark backgrounds */
+  --success:#52c97a;
+  --success-bg:rgba(46,160,70,.18);
+  --success-text:#52c97a;
+  --error:#f87171;
+  --error-bg:rgba(220,60,60,.18);
+  --error-text:#f87171;
+  --warn-bg:rgba(210,100,30,.18);
+  --warn-text:#ffb74d;
+}
+
+/* ── Login ───────────────────────────────────────────────────────────────────── */
+html.dark .login-card{background:#192535;border-color:#253648}
+html.dark .login-fields input{background:#0f1923;border-color:#253648;color:#e2e8f0}
+html.dark .login-fields input::placeholder{color:#8aafc8}
+
+/* ── Topbar & layout shells ──────────────────────────────────────────────────── */
+html.dark #topbar{background:#192535;border-color:#253648}
+html.dark #right-panel{background:#192535;border-color:#253648}
+html.dark #content-area{background:#0f1923}
+html.dark #panel-toggle{background:#192535;border-color:#253648}
+html.dark .panel-header{border-color:#253648}
+
+/* ── Agent chat ──────────────────────────────────────────────────────────────── */
+html.dark .agent-chat-header{background:#192535;border-color:#253648}
+html.dark .agent-messages{background:#0f1923}
+html.dark .agent-input-area{background:#192535;border-color:#253648}
+html.dark .agent-input{background:#192535;border-color:#253648;color:#e2e8f0}
+html.dark .agent-input:focus{background:#1e2e40}
+html.dark .agent-input::placeholder{color:#8aafc8}
+html.dark .agent-clear-btn{background:#192535;border-color:#253648;color:#9ab5cc}
+html.dark .msg-agent .msg-bubble{background:#1e2e40;border-color:#2d4260;color:#e2e8f0}
+html.dark .msg-user .msg-bubble{background:#3a6fc4}
+html.dark .msg-bubble code{background:#0f1923;color:#80baff}
+html.dark .msg-bubble pre{background:#0f1923;border-color:#253648}
+html.dark .msg-bubble th{background:#1e2e40;color:#e2e8f0}
+html.dark .msg-bubble td{border-color:#253648}
+html.dark .msg-bubble tr:hover{background:#253648}
+/* Chat routing tags — hardcoded dark colors replaced with light variants */
+html.dark .tag-sales{background:rgba(74,144,226,.18);color:#80baff}
+html.dark .tag-finance{background:rgba(46,160,70,.15);color:#52c97a}
+html.dark .tag-data{background:rgba(0,137,123,.15);color:#26c6b0}
+html.dark .tag-orchestrator{background:rgba(90,112,144,.15);color:#9ab5cc}
+
+/* ── Dashboard tabs & filter bar ─────────────────────────────────────────────── */
+html.dark .tab-bar{border-color:#253648}
+html.dark .tab-btn{color:#9ab5cc}
+html.dark .tab-btn:hover{color:#e2e8f0}
+html.dark .tab-btn.active{color:#80baff;border-bottom-color:#5a9ee8}
+html.dark .dash-filter-bar{background:#192535;border-color:#253648}
+html.dark .dash-filter-group label{color:#9ab5cc}
+html.dark .dash-filter-label{color:#8aafc8}
+html.dark .dash-filter-select{background:#0f1923;border-color:#253648;color:#e2e8f0}
+html.dark .dash-filter-reset{color:#9ab5cc;border-color:#253648}
+
+/* ── KPI cards ───────────────────────────────────────────────────────────────── */
+html.dark .kpi-card,html.dark .chart-card,html.dark .my-chart-card{background:#192535;border-color:#253648}
+html.dark .eval-stat-card{background:#192535;border-color:#253648}
+
+/* ── Charts ──────────────────────────────────────────────────────────────────── */
+html.dark .chart-filter-btn{background:#192535;border-color:#253648;color:#9ab5cc}
+html.dark .chart-filter-btn:hover{color:#e2e8f0;border-color:#2d4260}
+html.dark .chart-filter-btn.active{background:rgba(74,144,226,.14);border-color:#5a9ee8;color:#80baff}
+html.dark .charts-clear-btn{background:#192535;border-color:#253648;color:#9ab5cc}
+html.dark .my-chart-title{color:#e2e8f0}
+html.dark .my-chart-time{color:#8aafc8}
+html.dark .my-chart-delete-btn{border-color:#253648;color:#9ab5cc}
+html.dark #chart-modal{background:#192535;border-color:#253648}
+html.dark #chart-modal-header{border-color:#253648}
+html.dark .chart-saved-toast{background:#192535;border-color:#5a9ee8;color:#e2e8f0}
+
+/* ── Tables ──────────────────────────────────────────────────────────────────── */
+html.dark .activity-table-wrap,html.dark .users-section,html.dark .eval-panel,html.dark .eval-results-table-wrap{background:#192535;border-color:#253648}
+html.dark .activity-table th,html.dark .users-table th,html.dark .eval-table th{background:#1e2e40;color:#8aafc8!important}
+html.dark .activity-table td,html.dark .users-table td,html.dark .eval-table td{color:#e2e8f0!important;border-color:#253648!important}
+html.dark .activity-table tr:hover td,html.dark .users-table tr:hover td{background:#1e2e40}
+html.dark .users-section-header{background:#1e2e40;border-color:#253648}
+html.dark .users-table td span{color:#9ab5cc!important}
+html.dark .metric-val{color:#8aafc8!important}
+
+/* ── Provision form ──────────────────────────────────────────────────────────── */
+html.dark select,html.dark .provision-input,html.dark .provision-select{background:#0f1923;border-color:#253648;color:#e2e8f0}
+html.dark .provision-label{color:#9ab5cc}
+
+/* ── Right panel / activity feed ─────────────────────────────────────────────── */
+html.dark .feed-item:hover{background:#1e2e40}
+
+/* ── Evaluation ──────────────────────────────────────────────────────────────── */
+html.dark .eval-session-hdr:hover{background:#1e2e40}
+html.dark .eval-session-body{background:#0f1923}
+html.dark .eval-session-id{color:#e2e8f0}
+html.dark .eval-session-meta{color:#8aafc8}
+html.dark .eval-session-caret{color:#8aafc8}
+html.dark .eval-exchange{background:#1e2e40;border-color:#2d4260}
+html.dark .eval-exchange-q{color:#9ab5cc;background:rgba(74,144,226,.14)}
+html.dark .eval-exchange-a{color:#9ab5cc}
+html.dark .eval-metrics-panel{border-color:#253648}
+html.dark .metric-label{color:#9ab5cc}
+html.dark .metric-val{color:#8aafc8}
+html.dark .eval-notes-text{color:#9ab5cc;background:rgba(74,144,226,.1)}
+html.dark .eval-toggle-btn{color:rgba(128,186,255,.5)}
+html.dark .eval-toggle-btn:hover{color:#80baff}
+
+/* ── Confirm modal — hardcoded #FFFFFF bg and #0A1733 text ───────────────────── */
+html.dark .cmc{background:#192535;box-shadow:0 16px 48px rgba(0,0,0,.5)}
+html.dark .cm-title{color:#e2e8f0}
+html.dark .cm-msg{color:#9ab5cc}
+html.dark .cmi{background:rgba(220,60,60,.18)}
+html.dark .cm-cancel{background:#1e2e40;color:#9ab5cc;border-color:#253648}
+html.dark .cm-cancel:hover{background:#253648;color:#e2e8f0;border-color:#2d4260}
+
+
+/* ── Agent detail modal ──────────────────────────────────────────────────────── */
+html.dark .adm-card{background:#192535;border-color:#253648}
+html.dark .adm-footer{background:#192535;border-color:#253648}
+html.dark .adm-btn-close{background:#1e2e40;color:#9ab5cc;border-color:#253648}
+html.dark .adm-btn-close:hover{background:#253648;color:#e2e8f0}
+html.dark .adm-tool{background:#0f1923;border-color:#253648}
+html.dark .adm-tool-log{background:#0f1923;border-color:#253648;color:#9ab5cc}
+html.dark .adm-keyword-pill{background:rgba(74,144,226,.14);color:#80baff}
+
+/* ── Prediction cards — hardcoded rgba(0,0,0) backgrounds ───────────────────── */
+html.dark .pred-expand-btn{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:#9ab5cc}
+html.dark .pred-expand-btn:hover{background:rgba(255,255,255,.1);color:#e2e8f0;border-color:rgba(255,255,255,.2)}
+html.dark .pred-section{border-top-color:rgba(255,255,255,.1)}
+html.dark .pred-bar-track{background:rgba(255,255,255,.1)}
+html.dark .pred-factor-track{background:rgba(255,255,255,.08)}
+html.dark .pred-trend-placeholder{background:#1e2e40;border-color:#2d4260;color:#8aafc8}
+html.dark .pred-insight{background:rgba(74,144,226,.1);color:#9ab5cc}
+html.dark .pred-rec-item{background:#1e2e40;border-left-color:#2d4260}
+
+/* ── Profile popover ─────────────────────────────────────────────────────────── */
+html.dark .profile-popover{background:#192535;border-color:#253648}
+html.dark .profile-field-input{background:#0f1923;border-color:#253648;color:#e2e8f0}
+html.dark .profile-field-input::placeholder{color:#8aafc8}
+html.dark .profile-pic-label{background:#1e2e40;border-color:#253648;color:#80baff}
+html.dark .profile-popover-title{color:#8aafc8}
+html.dark .profile-field-label{color:#9ab5cc}
+
+/* ── Inline-style attribute selectors — JS-injected hardcoded dark text ─────── */
+html.dark td[style*="color:#5A7090"]{color:#e2e8f0!important}
+html.dark td[style*="color:#555"]{color:#e2e8f0!important}
+html.dark td[style*="color:#1E2D3D"]{color:#e2e8f0!important}
+html.dark td[style*="color:#333"]{color:#e2e8f0!important}
+html.dark span[style*="color:#5A7090"]{color:#9ab5cc!important}
+html.dark span[style*="color:#555"]{color:#9ab5cc!important}
+html.dark span[style*="color:#333"]{color:#9ab5cc!important}
+html.dark span[style*="color:#1E2D3D"]{color:#e2e8f0!important}
+/* Section page titles in admin views */
+html.dark #view-evaluation>div:first-child>span,html.dark #view-users>div:first-child>span{color:#e2e8f0!important}
+/* Refresh buttons in admin views */
+html.dark #view-evaluation>div:first-child>button,html.dark #view-users>div:first-child>button{background:#1e2e40!important;border-color:#253648!important;color:#80baff!important}
+/* Eval results panel header row */
+html.dark .eval-results-table-wrap>div:first-child{background:#1e2e40!important;border-color:#253648!important}
+html.dark .eval-results-table-wrap>div:first-child>span{color:#9ab5cc!important}
+/* Inline-ID spans */
+html.dark #conv-count,html.dark #users-count{color:#9ab5cc!important}
+/* Charts empty state */
+html.dark .charts-empty{color:#9ab5cc!important}
+html.dark .charts-empty div{color:#9ab5cc!important}
+/* Saved chart card expand button — onmouseover sets inline color */
+html.dark .my-chart-card-header button{color:#9ab5cc!important}
+html.dark .my-chart-card-header button:hover{color:#e2e8f0!important}
+
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);font-size:14px}
@@ -66,14 +252,48 @@ input{outline:none;font-family:'Inter',sans-serif}
 @keyframes pulse-opacity{0%,100%{opacity:1}50%{opacity:0.3}}
 
 /* ── Splash ───────────────────────────────────────────────────────────────── */
-#splash{position:fixed;inset:0;z-index:1000;background:var(--sidebar-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
-#splash .logo-wrap{animation:axisGlow 2s ease-in-out infinite}
-#splash .axis-name{font-size:30px;font-weight:600;letter-spacing:-.025em;color:#FFFFFF}
-#splash .axis-sub{font-size:13px;font-weight:300;color:var(--sidebar-text);letter-spacing:.05em}
-#splash.fade-out{animation:fadeOut .6s ease forwards}
+#splash{position:fixed;inset:0;z-index:1000;background:#030712;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+/* Geometric grid */
+#splash-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(45,107,255,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(45,107,255,0.045) 1px,transparent 1px);background-size:48px 48px;opacity:0;animation:sp-grid-in 1.4s ease 0.1s forwards}
+@keyframes sp-grid-in{from{opacity:0}to{opacity:1}}
+/* Center glow */
+#splash::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 55% 55% at 50% 50%,rgba(45,107,255,0.07) 0%,transparent 70%);animation:sp-pulse 4s ease-in-out infinite}
+@keyframes sp-pulse{0%,100%{opacity:.6}50%{opacity:1}}
+/* Scan line */
+#splash-scan{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(99,174,255,0.5) 40%,rgba(45,107,255,0.8) 50%,rgba(99,174,255,0.5) 60%,transparent 100%);top:0;animation:sp-scan 2.1s cubic-bezier(0.4,0,0.6,1) 0.2s forwards;opacity:0}
+@keyframes sp-scan{0%{top:0%;opacity:0}4%{opacity:1}94%{opacity:0.35}100%{top:100%;opacity:0}}
+/* Content container */
+#splash-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:0}
+/* Logo */
+#splash .sp-logo{opacity:0;animation:sp-logo-in 0.9s cubic-bezier(0.16,1,0.3,1) 0.4s forwards;margin-bottom:20px}
+@keyframes sp-logo-in{from{opacity:0;transform:scale(0.82) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+/* Wordmark */
+#splash .sp-name{font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:38px;font-weight:700;letter-spacing:-0.03em;color:#FFFFFF;opacity:0;animation:sp-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.85s forwards;margin-bottom:8px}
+#splash .sp-period{color:#2D6BFF}
+/* Tagline */
+#splash .sp-sub{font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:11px;font-weight:400;letter-spacing:0.22em;color:rgba(148,184,216,0.6);text-transform:uppercase;opacity:0;animation:sp-up 0.7s cubic-bezier(0.16,1,0.3,1) 1.1s forwards;margin-bottom:28px}
+@keyframes sp-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* Status row */
+#splash .sp-status{display:flex;align-items:center;gap:8px;opacity:0;animation:sp-up 0.6s ease 1.5s forwards}
+#splash .sp-dot{width:5px;height:5px;border-radius:50%;background:#2D6BFF;animation:sp-dot-blink 1.1s ease-in-out 1.5s infinite}
+@keyframes sp-dot-blink{0%,100%{opacity:1}50%{opacity:0.25}}
+#splash .sp-status-text{font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:11px;font-weight:400;letter-spacing:0.07em;color:rgba(148,184,216,0.4)}
+/* Version stamp */
+#splash .sp-version{position:absolute;bottom:28px;right:28px;font-family:'Plus Jakarta Sans',monospace;font-size:10px;font-weight:300;letter-spacing:0.07em;color:rgba(148,184,216,0.2);opacity:0;animation:sp-up 0.6s ease 1.3s forwards}
+/* Progress bar */
+#splash-bar{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,0.04)}
+#splash-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,#1a3fa3,#2D6BFF 50%,#63AEFF);animation:sp-bar 2.3s cubic-bezier(0.4,0,0.2,1) 0.15s forwards}
+@keyframes sp-bar{0%{width:0%}55%{width:70%}80%{width:88%}100%{width:100%}}
+/* Exit */
+#splash.fade-out{animation:fadeOut .5s ease forwards}
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){#splash .sp-logo,#splash .sp-name,#splash .sp-sub,#splash .sp-status,#splash .sp-version,#splash-grid,#splash-scan,#splash-bar-fill{animation:none!important;opacity:1!important;transform:none!important;width:100%!important}}
 
 /* ── Login ────────────────────────────────────────────────────────────────── */
-#login-screen{position:fixed;inset:0;z-index:900;background:var(--sidebar-bg);display:none;align-items:center;justify-content:center;animation:fadeIn .5s ease}
+#login-screen{position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;animation:fadeIn .5s ease;overflow:hidden;background:radial-gradient(ellipse 80% 60% at 50% 0%,#1e3a5f 0%,transparent 70%),radial-gradient(ellipse 60% 50% at 80% 100%,#0f4c81 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 20% 80%,#1a3a6b 0%,transparent 55%),linear-gradient(160deg,#0a1628 0%,#0d1f3c 40%,#0a1628 100%)}
+@keyframes ls-breathe{0%,100%{opacity:.04}50%{opacity:.13}}
+#login-screen::before{content:'';position:absolute;z-index:-1;pointer-events:none;top:0;left:0;width:2px;height:2px;background:transparent;box-shadow:148px 214px 0 1px rgba(255,255,255,.33),776px 122px 0 0 rgba(255,255,255,.27),934px 458px 0 1px rgba(255,255,255,.22),84px 648px 0 0 rgba(255,255,255,.30),1356px 274px 0 0 rgba(255,255,255,.25),474px 826px 0 0 rgba(255,255,255,.19),1202px 714px 0 1px rgba(255,255,255,.28),322px 918px 0 0 rgba(255,255,255,.17)}
+#login-screen::after{content:'';position:absolute;z-index:-1;pointer-events:none;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 50%,rgba(99,174,255,.65) 0%,transparent 70%);animation:ls-breathe 6s ease-in-out infinite}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px;width:380px;display:flex;flex-direction:column;align-items:center;gap:28px;box-shadow:var(--shadow-md)}
 .login-logo{display:flex;flex-direction:column;align-items:center;gap:12px}
 .login-logo .axis-name{font-size:26px;font-weight:600;letter-spacing:-.025em;color:var(--text)}
@@ -468,29 +688,36 @@ input{outline:none;font-family:'Inter',sans-serif}
 .halo-welcome{font-size:15px;font-weight:500;color:var(--text);letter-spacing:-.01em;text-align:center}
 .halo-sub{font-size:12px;color:var(--text-muted);text-align:center;line-height:1.55;max-width:260px}
 
-/* ── Welcome modal ─────────────────────────────────────────────────────────── */
-@keyframes welcomeIn  {from{opacity:0;transform:scale(.9) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
-@keyframes welcomeOut {from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.03)}}
-@keyframes welcomeProgress{from{width:0%}to{width:100%}}
-#welcome-modal{position:fixed;inset:0;z-index:960;display:none;align-items:center;justify-content:center;cursor:pointer}
-.welcome-backdrop{position:absolute;inset:0;background:rgba(10,23,51,0.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.welcome-card{
-  position:relative;z-index:1;cursor:default;
-  background:#FFFFFF;
-  border-radius:20px;
-  padding:40px 56px 36px;
-  display:flex;flex-direction:column;align-items:center;gap:0;
-  box-shadow:0 24px 72px rgba(10,23,51,0.18),0 0 0 1px rgba(45,107,255,0.08);
-  animation:welcomeIn .46s cubic-bezier(.16,1,.3,1) forwards;
-  min-width:320px;
+/* ── Welcome — full-screen cinematic overlay ─────────────────────────────── */
+@keyframes wc-logo-in  {from{opacity:0;transform:scale(.6);filter:blur(12px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+@keyframes wc-glow     {0%,100%{filter:drop-shadow(0 0 14px rgba(99,174,255,.4))}50%{filter:drop-shadow(0 0 34px rgba(99,174,255,.9))}}
+@keyframes wc-char-fade{from{opacity:0}to{opacity:1}}
+@keyframes wc-greet-in {from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wc-name-char{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wc-line     {from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes wc-scan     {from{left:-60%}to{left:120%}}
+@keyframes wc-out      {from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.04)}}
+#welcome-modal{
+  position:fixed;inset:0;z-index:9999;
+  display:none;align-items:center;justify-content:center;
+  cursor:pointer;overflow:hidden;
+  background:#0a1928;
+  background-image:radial-gradient(circle,rgba(99,174,255,.08) 1px,transparent 1px);
+  background-size:30px 30px;
 }
-.welcome-card.out{animation:welcomeOut .24s ease forwards}
-.welcome-persona{margin-bottom:16px}
-.welcome-subtitle{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin-bottom:14px}
-.welcome-greeting{font-size:13px;color:var(--text-muted);letter-spacing:.01em;margin-bottom:4px}
-.welcome-name{font-size:28px;font-weight:700;color:#0A1733;letter-spacing:-.025em;text-align:center;max-width:320px;line-height:1.15}
-.welcome-progress-wrap{width:120px;height:2px;background:rgba(45,107,255,0.12);border-radius:2px;margin-top:24px;overflow:hidden}
-.welcome-progress-fill{height:100%;background:linear-gradient(90deg,#2D6BFF,#63AEFF);border-radius:2px;width:0%;animation:welcomeProgress 3s linear forwards}
+#welcome-modal.wc-out{animation:wc-out .35s cubic-bezier(.4,0,1,1) forwards;pointer-events:none}
+#welcome-modal::after{
+  content:'';position:absolute;top:0;left:-60%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent 0%,rgba(99,174,255,.04) 40%,rgba(99,174,255,.09) 50%,rgba(99,174,255,.04) 60%,transparent 100%);
+  animation:wc-scan 1.9s cubic-bezier(.4,0,.6,1) .25s forwards;
+  pointer-events:none;
+}
+.wc-content{display:flex;flex-direction:column;align-items:center;gap:0;cursor:default;user-select:none;text-align:center;padding:0 24px}
+.wc-logo{margin-bottom:28px;animation:wc-logo-in .8s cubic-bezier(.16,1,.3,1) both,wc-glow 2.8s ease .8s infinite}
+.wc-platform{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(99,174,255,.52);margin-bottom:30px}
+#welcome-greeting{font-family:'Inter',sans-serif;font-size:14px;font-weight:400;color:rgba(148,184,216,.65);letter-spacing:.01em;margin-bottom:10px;animation:wc-greet-in .6s cubic-bezier(.22,1,.36,1) .4s both}
+#welcome-name{font-family:'DM Serif Display',serif;font-size:52px;font-weight:400;color:#e8f0ff;letter-spacing:-.02em;line-height:1.1;max-width:640px}
+.wc-accent-line{height:1px;width:120px;margin-top:28px;background:linear-gradient(90deg,transparent,#63AEFF,transparent);transform-origin:center;animation:wc-line .6s cubic-bezier(.16,1,.3,1) .88s both}
 
 /* ── Confirm Modal ─────────────────────────────────────────────────────────── */
 @keyframes confirmIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
@@ -508,6 +735,65 @@ input{outline:none;font-family:'Inter',sans-serif}
 .cm-ok{flex:1;padding:10px 0;border-radius:9px;font-size:13px;font-weight:600;background:#DC2626;color:#fff;border:none;cursor:pointer;transition:filter .15s ease;font-family:'Inter',sans-serif}
 .cm-ok:hover{filter:brightness(1.1)}
 
+/* ── Agents View ──────────────────────────────────────────────────────────── */
+#view-agents{display:none}
+.agents-page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.agents-page-title{font-size:16px;font-weight:600;color:var(--text)}
+.agent-filter-bar{display:flex;gap:6px}
+.agent-filter-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:12px;font-weight:500;padding:5px 12px;cursor:pointer;transition:all .2s ease;font-family:'Inter',sans-serif}
+.agent-filter-btn:hover{color:var(--text);border-color:var(--border2)}
+.agent-filter-btn.active{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark)}
+.agents-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px;color:var(--text-faint);font-size:13px;text-align:center}
+.agents-loading{display:flex;align-items:center;justify-content:center;min-height:200px;gap:10px;color:var(--text-muted);font-size:13px}
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--shadow);cursor:pointer;transition:all .2s ease}
+.agent-card:hover{border-color:var(--primary);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.agent-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.agent-card-name{font-size:14px;font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agent-status-badge{flex-shrink:0;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.05em}
+.agent-status-active{background:var(--success-bg);color:var(--success-text)}
+.agent-status-draft{background:var(--warn-bg);color:var(--warn-text)}
+.agent-status-disabled{background:var(--bg2);color:var(--text-muted)}
+.agent-card-desc{font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.agent-card-footer{display:flex;align-items:center;justify-content:space-between}
+.agent-tool-count{font-size:11px;color:var(--text-faint)}
+.agent-valid-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;background:var(--success-bg);color:var(--success-text)}
+.agent-invalid-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;background:var(--error-bg);color:var(--error-text)}
+
+/* ── Agent Detail Modal ────────────────────────────────────────────────────── */
+#agent-detail-modal{position:fixed;inset:0;z-index:980;display:none;align-items:center;justify-content:center;padding:20px}
+.adm-backdrop{position:absolute;inset:0;background:rgba(10,23,51,0.15);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.adm-card{position:relative;z-index:1;background:var(--surface);border-radius:16px;width:700px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(10,23,51,0.13),0 0 0 1px rgba(10,23,51,0.05);overflow:hidden}
+.adm-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;gap:12px}
+.adm-title-row{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.adm-name{font-size:16px;font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-close-x{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;border-radius:6px;transition:color .15s;flex-shrink:0}
+.adm-close-x:hover{color:var(--text)}
+.adm-body{flex:1;overflow-y:auto;padding:20px}
+.adm-section{margin-bottom:20px}
+.adm-section:last-child{margin-bottom:0}
+.adm-label{font-size:10px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.adm-value{font-size:13px;color:var(--text);line-height:1.5}
+.adm-keywords{display:flex;flex-wrap:wrap;gap:6px}
+.adm-keyword-pill{background:var(--primary-light);border:1px solid rgba(74,144,226,.25);color:var(--primary-dark);font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px}
+.adm-tool{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.adm-tool:last-child{margin-bottom:0}
+.adm-tool-header{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.adm-tool-name{font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0}
+.adm-tool-ast,.adm-tool-sandbox{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;flex-shrink:0}
+.adm-tool-ast.pass,.adm-tool-sandbox.pass{background:var(--success-bg);color:var(--success-text)}
+.adm-tool-ast.fail,.adm-tool-sandbox.fail{background:var(--error-bg);color:var(--error-text)}
+.adm-tool-desc{font-size:12px;color:var(--text-muted);margin-bottom:6px}
+.adm-tool-log{font-size:11px;font-family:monospace;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;white-space:pre-wrap;overflow-x:auto;max-height:160px;overflow-y:auto;color:var(--text-muted);margin-top:6px}
+.adm-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.adm-btn{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;border:none;transition:filter .2s ease}
+.adm-btn-close{background:var(--bg2);color:var(--text-muted);border:1px solid var(--border)}
+.adm-btn-close:hover{background:var(--bg);color:var(--text)}
+.adm-btn-activate{background:#43A047;color:#fff}
+.adm-btn-activate:hover{filter:brightness(1.1)}
+.adm-btn-disable{background:#E53935;color:#fff}
+.adm-btn-disable:hover{filter:brightness(1.1)}
+
 /* ── Inline chart in chat bubble ─────────────────────────────────────────── */
 @keyframes chartFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .chat-inline-chart-wrap{margin:12px 0 4px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);animation:chartFadeIn .5s ease}
@@ -515,21 +801,103 @@ input{outline:none;font-family:'Inter',sans-serif}
 .chat-chart-link-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 16px;background:var(--primary-light);border:1px solid rgba(45,107,255,.25);border-radius:8px;color:#2D6BFF;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s ease;text-decoration:none}
 .chat-chart-link-btn:hover{background:rgba(45,107,255,.15);border-color:rgba(45,107,255,.45);box-shadow:0 2px 8px rgba(45,107,255,.12)}
 .chat-chart-link-btn svg{flex-shrink:0}
+
+/* ── Dark mode toggle (sidebar-logo) ─────────────────────────────────────────── */
+.dark-toggle{margin-left:auto;flex-shrink:0;background:none;border:none;color:var(--sidebar-text);padding:5px;border-radius:6px;display:flex;align-items:center;justify-content:center;opacity:.65;transition:opacity .2s ease,background .2s ease;cursor:pointer}
+.dark-toggle:hover{opacity:1;background:var(--sidebar-hover)}
+
+/* ── Sidebar ETL button ─────────────────────────────────────────────────────── */
+.sidebar-etl-btn{position:relative;display:flex;align-items:center;gap:8px;width:100%;background:rgba(74,144,226,.08);border:1px solid rgba(74,144,226,.18);border-radius:8px;color:#63AEFF;font-size:12px;font-weight:500;padding:8px 12px;cursor:pointer;transition:all .2s ease;font-family:'Inter',sans-serif;text-align:left}
+.sidebar-etl-btn:hover{background:rgba(74,144,226,.18);border-color:rgba(99,174,255,.5);color:#FFFFFF}
+.sidebar-etl-btn.running{opacity:.9;cursor:default}
+.sidebar-etl-btn:disabled{opacity:.6;cursor:not-allowed}
+/* ring wrap */
+.etl-ring-wrap{position:relative;width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.etl-icon-inner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;pointer-events:none}
+.etl-progress-ring{position:absolute;top:0;left:0;opacity:0;transition:opacity .35s ease;transform-origin:11px 11px;pointer-events:none}
+.etl-ring-track{stroke:rgba(99,174,255,.15)}
+.etl-ring-arc{stroke:#63AEFF;stroke-linecap:round;transition:stroke .4s ease}
+/* running — indeterminate spin */
+.sidebar-etl-btn.running .etl-progress-ring{opacity:1;animation:spin 1.1s linear infinite}
+/* completion flash */
+.sidebar-etl-btn.etl-done .etl-progress-ring{opacity:1;animation:none}
+.sidebar-etl-btn.etl-done.etl-success .etl-ring-arc{stroke:#52c97a}
+.sidebar-etl-btn.etl-done.etl-error   .etl-ring-arc{stroke:#f87171}
+/* hover tooltip while running */
+.etl-tooltip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;background:rgba(15,25,35,.94);color:#e2e8f0;font-size:11px;padding:4px 9px;border-radius:5px;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;pointer-events:none;z-index:999;border:1px solid rgba(255,255,255,.1);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.sidebar-etl-btn.running:hover .etl-tooltip{display:block}
+/* ETL liquid fill bar */
+.etl-fill-bar{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(135deg,rgba(41,182,246,.28) 0%,rgba(99,174,255,.18) 100%);border-radius:7px 0 0 7px;transition:width .7s cubic-bezier(.4,0,.2,1),background .35s ease;pointer-events:none;z-index:0}
+.etl-fill-bar.etl-full{border-radius:7px}
+.etl-fill-bar.etl-success{background:rgba(82,201,122,.38)}
+.etl-fill-bar.etl-error{background:rgba(248,113,113,.38)}
+.etl-ring-wrap{z-index:1}
+#sidebar-etl-label{position:relative;z-index:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* ETL row wrapper + cancel button */
+.etl-row{display:flex;align-items:center;gap:6px;width:100%}
+.etl-row .sidebar-etl-btn{flex:1;min-width:0}
+.sidebar-etl-cancel-btn{flex-shrink:0;display:none;align-items:center;justify-content:center;width:26px;height:26px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.25);border-radius:6px;color:#f87171;font-size:15px;line-height:1;cursor:pointer;transition:background .2s ease,border-color .2s ease;padding:0;font-family:inherit}
+.sidebar-etl-cancel-btn:hover{background:rgba(248,113,113,.28);border-color:#f87171;color:#fff}
+.sidebar-etl-cancel-btn.visible{display:flex}
+
+/* ── Sidebar profile section ─────────────────────────────────────────────────── */
+.sidebar-profile{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .2s ease;border:1px solid transparent}
+.sidebar-profile:hover{background:var(--sidebar-hover);border-color:rgba(255,255,255,.06)}
+.sidebar-avatar{width:34px;height:34px;border-radius:50%;background:rgba(99,174,255,.15);border:1.5px solid rgba(99,174,255,.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sidebar-profile-info{flex:1;min-width:0}
+.sidebar-profile-name{font-size:12px;font-weight:600;color:var(--sidebar-text-active);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-profile-role{font-size:10px;color:var(--sidebar-text);text-transform:capitalize;margin-top:1px}
+
+/* ── Profile popover ─────────────────────────────────────────────────────────── */
+.profile-popover{position:fixed;left:12px;bottom:100px;width:220px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow-md);z-index:600;display:none;flex-direction:column;gap:12px;animation:slideIn .2s ease}
+.profile-popover.open{display:flex}
+.profile-popover-title{font-size:11px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:.07em}
+.profile-avatar-row{display:flex;flex-direction:column;align-items:center;gap:8px}
+.profile-avatar-lg{width:56px;height:56px;border-radius:50%;background:rgba(99,174,255,.1);border:2px solid rgba(99,174,255,.25);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.profile-pic-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--primary-dark);cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:6px;transition:all .2s ease;background:var(--bg)}
+.profile-pic-label:hover{border-color:var(--primary);background:var(--primary-light)}
+.profile-field-row{display:flex;flex-direction:column;gap:4px}
+.profile-field-label{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
+.profile-field-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:7px 10px;font-family:'Inter',sans-serif;transition:border-color .2s ease;width:100%}
+.profile-field-input:focus{outline:none;border-color:var(--primary)}
+.profile-save-btn{background:var(--primary);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:600;padding:8px;cursor:pointer;transition:background .2s ease;font-family:'Inter',sans-serif}
+.profile-save-btn:hover{background:var(--primary-dark)}
+.profile-divider{height:1px;background:var(--border);margin:0 -4px}
+.profile-tour-btn{display:flex;align-items:center;gap:7px;width:100%;background:rgba(74,144,226,.07);border:1px solid rgba(74,144,226,.15);border-radius:7px;color:#63AEFF;font-size:11px;font-weight:500;padding:7px 10px;cursor:pointer;transition:all .2s ease;font-family:'Inter',sans-serif;text-align:left}
+.profile-tour-btn:hover{background:rgba(74,144,226,.16);border-color:rgba(99,174,255,.45);color:#FFFFFF}
+
+/* ── Status toast ─────────────────────────────────────────────────────────────── */
+.status-toast{position:fixed;bottom:20px;right:20px;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:700;pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .25s ease,transform .25s ease;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-md);color:var(--text)}
+.status-toast.show{opacity:1;transform:translateY(0)}
+.status-toast.show.success{border-color:#43A047;color:#2E7D32;background:var(--success-bg)}
+.status-toast.show.error{border-color:#E53935;color:var(--error-text);background:var(--error-bg)}
 </style>
 </head>
 <body>
 
 <!-- ═══════════════════════════════════════════════════════════ SPLASH ══════ -->
 <div id="splash">
-  <div class="logo-wrap">
-    <svg width="64" height="64" viewBox="0 0 78 78" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M 14 66 L 39 12 L 64 66" fill="none" stroke="#63AEFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M 24 46 A 18 18 0 0 0 54 46" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="4" stroke-linecap="round"/>
-      <circle cx="39" cy="55" r="3.5" fill="rgba(255,255,255,0.65)"/>
+  <div id="splash-grid"></div>
+  <div id="splash-scan"></div>
+
+  <div id="splash-content">
+    <svg class="sp-logo" width="72" height="72" viewBox="0 0 78 78" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M14 66 L39 12 L64 66" fill="none" stroke="#2D6BFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M24 46 A18 18 0 0 0 54 46" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="39" cy="55" r="3.5" fill="rgba(255,255,255,0.45)"/>
     </svg>
+    <span class="sp-name" aria-label="axis">axis<span class="sp-period">.</span></span>
+    <span class="sp-sub">Operational Intelligence</span>
+    <div class="sp-status" aria-live="polite" aria-label="Initializing">
+      <div class="sp-dot"></div>
+      <span class="sp-status-text">Initializing systems</span>
+    </div>
   </div>
-  <span class="axis-name">axis<span class="axis-period">.</span></span>
-  <span class="axis-sub">Operational Intelligence</span>
+
+  <span class="sp-version" aria-hidden="true">axis · ERP Intelligence</span>
+  <div id="splash-bar" role="progressbar" aria-label="Loading" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+    <div id="splash-bar-fill"></div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════ LOGIN ═══════ -->
@@ -566,6 +934,10 @@ input{outline:none;font-family:'Inter',sans-serif}
         <circle cx="39" cy="55" r="3.5" fill="rgba(255,255,255,0.55)"/>
       </svg>
       <span class="axis-name">axis<span class="axis-period">.</span></span>
+      <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">
+        <svg id="dark-icon-moon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 9.6a6 6 0 01-7.3-7.3A5.5 5.5 0 1013.3 9.6z"/></svg>
+        <svg id="dark-icon-sun" width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M3.5 12.5l1.4-1.4M11.1 4.9l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
     </div>
 
     <nav class="sidebar-nav">
@@ -625,20 +997,85 @@ input{outline:none;font-family:'Inter',sans-serif}
     </nav>
 
     <div class="sidebar-footer">
-      <div class="user-info">
-        <div class="user-dot"></div>
-        <span class="user-name" id="sidebar-username">admin</span>
+      <!-- ETL trigger — visible to admins only -->
+      <div class="etl-row" id="etl-row" style="display:none">
+        <button class="sidebar-etl-btn" id="sidebar-etl-btn" onclick="triggerSidebarETL()">
+          <div class="etl-fill-bar" id="etl-fill-bar"></div>
+          <div class="etl-ring-wrap">
+            <div class="etl-icon-inner">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <ellipse cx="8" cy="4" rx="5" ry="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                <path d="M3 4v4c0 1.1 2.24 2 5 2s5-.9 5-2V4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                <path d="M3 8v4c0 1.1 2.24 2 5 2s5-.9 5-2V8" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              </svg>
+            </div>
+            <!-- r=9, circumference≈56.55; dash=20, gap=36.55 for indeterminate arc -->
+            <svg class="etl-progress-ring" id="etl-progress-ring" width="22" height="22" viewBox="0 0 22 22">
+              <circle class="etl-ring-track" cx="11" cy="11" r="9" fill="none" stroke-width="2"/>
+              <circle class="etl-ring-arc" id="etl-ring-arc" cx="11" cy="11" r="9" fill="none"
+                      stroke-width="2" stroke-dasharray="20 36.55" stroke-dashoffset="0"/>
+            </svg>
+          </div>
+          <span id="sidebar-etl-label">Run ETL</span>
+          <span class="etl-tooltip" id="etl-tooltip">ETL running…</span>
+        </button>
+        <button class="sidebar-etl-cancel-btn" id="sidebar-etl-cancel-btn" onclick="cancelETL()" title="Cancel ETL">×</button>
       </div>
-      <button class="tour-btn" id="tour-restart-btn" onclick="TourManager.reset()">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-          <path d="M13.5 8A5.5 5.5 0 112.5 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M13.5 4v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Profile section -->
+      <div class="sidebar-profile" id="sidebar-profile" onclick="toggleProfilePopover(event)">
+        <div class="sidebar-avatar" id="sidebar-avatar">
+          <svg width="18" height="18" viewBox="0 0 78 78" fill="none">
+            <path d="M14 66L39 12L64 66" fill="none" stroke="#63AEFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M24 46 A18 18 0 0 0 54 46" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="39" cy="55" r="3.5" fill="rgba(255,255,255,0.55)"/>
+          </svg>
+        </div>
+        <div class="sidebar-profile-info">
+          <div class="sidebar-profile-name" id="sidebar-profile-name">admin</div>
+          <div class="sidebar-profile-role" id="sidebar-profile-role">admin</div>
+        </div>
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;margin-left:auto;opacity:.45">
+          <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        Replay Tour
-      </button>
+      </div>
       <button class="logout-btn" onclick="logout()">Sign out</button>
     </div>
   </aside>
+
+  <!-- Profile popover (fixed, above profile section) -->
+  <div class="profile-popover" id="profile-popover">
+    <div class="profile-popover-title">Profile</div>
+    <div class="profile-avatar-row">
+      <div class="profile-avatar-lg" id="profile-avatar-lg">
+        <svg width="28" height="28" viewBox="0 0 78 78" fill="none">
+          <path d="M14 66L39 12L64 66" fill="none" stroke="#63AEFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M24 46 A18 18 0 0 0 54 46" fill="none" stroke="#1A3355" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="39" cy="55" r="3.5" fill="#1A3355"/>
+        </svg>
+      </div>
+      <label class="profile-pic-label" for="profile-pic-input">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Upload photo
+      </label>
+      <input type="file" id="profile-pic-input" accept="image/*" style="display:none" onchange="handleProfilePicChange(this)">
+    </div>
+    <div class="profile-field-row">
+      <label class="profile-field-label" for="profile-name-input">Display Name</label>
+      <input type="text" class="profile-field-input" id="profile-name-input" placeholder="Your name">
+    </div>
+    <button class="profile-save-btn" onclick="saveProfileName()">Save changes</button>
+    <div class="profile-divider"></div>
+    <button class="profile-tour-btn" onclick="replayTour()">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M13.5 8A5.5 5.5 0 112.5 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M13.5 4v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Replay Tour
+    </button>
+  </div>
+
+  <!-- Status toast -->
+  <div class="status-toast" id="status-toast"></div>
 
   <!-- ─── Main Wrapper ─────────────────────────────────────────────────────── -->
   <div id="main-wrapper">
@@ -736,7 +1173,7 @@ input{outline:none;font-family:'Inter',sans-serif}
               </div>
               <div class="chart-card" id="card-pipeline">
                 <div class="chart-header">
-                  <div class="chart-title">Pipeline by Stage</div>
+                  <div class="chart-title">Open Pipeline Value by Stage</div>
                   <button class="fullscreen-btn" onclick="toggleFullscreen('card-pipeline')" title="Fullscreen">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
                   </button>
@@ -1061,6 +1498,27 @@ input{outline:none;font-family:'Inter',sans-serif}
 
       </div><!-- /view-users -->
 
+      <!-- ── Agents View ────────────────────────────────────────────────── -->
+      <div id="view-agents" class="view">
+
+        <div class="agents-page-header">
+          <span class="agents-page-title">AI Agents</span>
+          <button onclick="loadAgents()" style="background:var(--primary-light);border:1px solid var(--border);border-radius:8px;color:var(--primary-dark);font-size:12px;padding:6px 14px;cursor:pointer;font-family:'Inter',sans-serif">Refresh</button>
+        </div>
+
+        <div class="agent-filter-bar" style="margin-bottom:20px">
+          <button class="agent-filter-btn active" data-status="all"      onclick="filterAgents('all')">All</button>
+          <button class="agent-filter-btn"         data-status="active"   onclick="filterAgents('active')">Active</button>
+          <button class="agent-filter-btn"         data-status="draft"    onclick="filterAgents('draft')">Draft</button>
+          <button class="agent-filter-btn"         data-status="disabled" onclick="filterAgents('disabled')">Disabled</button>
+        </div>
+
+        <div id="agents-grid-container">
+          <div class="agents-empty" id="agents-empty-state">No agents found.</div>
+        </div>
+
+      </div><!-- /view-agents -->
+
     </div><!-- /content-area -->
   </div><!-- /main-wrapper -->
 
@@ -1092,6 +1550,9 @@ input{outline:none;font-family:'Inter',sans-serif}
 <script>
 'use strict';
 
+// Apply dark mode immediately to avoid flash of wrong color scheme
+(function(){if(localStorage.getItem('axis_dark_mode')==='1')document.documentElement.classList.add('dark');})();
+
 // ── Constants ──────────────────────────────────────────────────────────────
 const COLORS = {
   indigo:  '#4A90E2',
@@ -1105,7 +1566,9 @@ const COLORS = {
 
 const CHART_PALETTE = ['#00897B','#E64A19','#7B1FA2','#F57C00','#1565C0','#388E3C','#880E4F','#F9A825'];
 
-const PLOTLY_BASE = {
+function isDark() { return document.documentElement.classList.contains('dark'); }
+
+let PLOTLY_BASE = {
   paper_bgcolor: 'transparent',
   plot_bgcolor:  'transparent',
   font: { color: '#0A1733', family: 'Inter, sans-serif', size: 11 },
@@ -1117,11 +1580,43 @@ const PLOTLY_BASE = {
   hovermode: 'x unified',
 };
 
-const PLOTLY_BASE_PIE = Object.assign({}, PLOTLY_BASE, { hovermode: 'closest' });
+let PLOTLY_BASE_PIE = Object.assign({}, PLOTLY_BASE, { hovermode: 'closest' });
 
 const PLOTLY_CFG = { displayModeBar: false, responsive: true };
 
-// Force light-theme styling on any saved chart layout (overrides dark-mode stored values)
+function _updatePlotlyBase(dark) {
+  const t = dark
+    ? {text:'#e2e8f0',muted:'#9ab5cc',grid:'#253648',line:'#2d4260',legendBg:'rgba(25,37,53,0.95)',hoverBg:'#192535',hoverBorder:'#2d4260'}
+    : {text:'#0A1733',muted:'#2C3E50',grid:'#E0E6ED',line:'#C2D4E8',legendBg:'rgba(255,255,255,0.95)',hoverBg:'#FFFFFF',hoverBorder:'#D8E4F0'};
+  PLOTLY_BASE.font      = {color:t.text,family:'Inter, sans-serif',size:11};
+  PLOTLY_BASE.xaxis     = {gridcolor:t.grid,linecolor:t.line,zerolinecolor:t.grid,tickfont:{size:11,color:t.muted},title:{font:{color:t.muted}},automargin:true};
+  PLOTLY_BASE.yaxis     = {gridcolor:t.grid,linecolor:t.line,zerolinecolor:t.grid,tickfont:{size:11,color:t.muted},title:{font:{color:t.muted}},automargin:true};
+  PLOTLY_BASE.legend    = {bgcolor:t.legendBg,bordercolor:t.grid,borderwidth:1,font:{color:t.text}};
+  PLOTLY_BASE.hoverlabel= {bgcolor:t.hoverBg,bordercolor:t.hoverBorder,font:{color:t.text,size:12,family:'Inter, sans-serif'}};
+  Object.assign(PLOTLY_BASE_PIE, PLOTLY_BASE, {hovermode:'closest'});
+}
+
+function _relayoutAllCharts(dark) {
+  const t = dark
+    ? {text:'#e2e8f0',muted:'#9ab5cc',grid:'#253648',line:'#2d4260',legendBg:'rgba(25,37,53,0.95)',hoverBg:'#192535',hoverBorder:'#2d4260'}
+    : {text:'#0A1733',muted:'#2C3E50',grid:'#E0E6ED',line:'#C2D4E8',legendBg:'rgba(255,255,255,0.95)',hoverBg:'#FFFFFF',hoverBorder:'#D8E4F0'};
+  const textColor = dark ? '#e2e8f0' : '#1E2D3D';
+  const patch = {
+    'font.color':t.text,
+    'xaxis.gridcolor':t.grid,'xaxis.linecolor':t.line,'xaxis.zerolinecolor':t.grid,
+    'xaxis.tickfont.color':t.muted,'xaxis.title.font.color':t.muted,
+    'yaxis.gridcolor':t.grid,'yaxis.linecolor':t.line,'yaxis.zerolinecolor':t.grid,
+    'yaxis.tickfont.color':t.muted,'yaxis.title.font.color':t.muted,
+    'legend.bgcolor':t.legendBg,'legend.bordercolor':t.grid,'legend.font.color':t.text,
+    'hoverlabel.bgcolor':t.hoverBg,'hoverlabel.bordercolor':t.hoverBorder,'hoverlabel.font.color':t.text,
+  };
+  document.querySelectorAll('[id^="chart-"],[id^="chat-chart-"],[id^="my-chart-plot-"]').forEach(el => {
+    if (el.data) { try { Plotly.relayout(el,patch); Plotly.restyle(el,{'textfont.color':textColor}); } catch(_){} }
+  });
+}
+
+if (isDark()) _updatePlotlyBase(true);
+
 function _lightLayout(savedLayout, defaultMargin) {
   const savedX = savedLayout.xaxis || {};
   const savedY = savedLayout.yaxis || {};
@@ -1188,17 +1683,23 @@ async function apiFetch(url, opts = {}) {
   return r.json();
 }
 
-// ── Welcome modal ─────────────────────────────────────────────────────────
+// ── Welcome overlay ─────────────────────────────────────────────────────────
 let _welcomeTimer = null;
-let _welcomeHalo  = null;
+
+function _wcSplitChars(el, animName, duration, easing, baseDelay, stagger) {
+  const text = el.textContent;
+  el.innerHTML = [...text].map((ch, i) => {
+    const safe  = ch === ' ' ? '&nbsp;' : ch.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const delay = baseDelay + i * stagger;
+    return `<span style="display:inline-block;animation:${animName} ${duration}ms ${easing} ${delay}ms both">${safe}</span>`;
+  }).join('');
+}
 
 function showWelcome(fullName, username) {
-  const modal    = document.getElementById('welcome-modal');
-  const card     = document.getElementById('welcome-card');
-  const greetEl  = document.getElementById('welcome-greeting');
-  const nameEl   = document.getElementById('welcome-name');
-  const persona  = document.getElementById('welcome-persona-container');
-  const progress = document.getElementById('welcome-progress-fill');
+  const modal      = document.getElementById('welcome-modal');
+  const greetEl    = document.getElementById('welcome-greeting');
+  const nameEl     = document.getElementById('welcome-name');
+  const platformEl = document.querySelector('.wc-platform');
 
   const firstKey = 'axis_first_' + (username || '');
   const isFirst  = !localStorage.getItem(firstKey);
@@ -1207,31 +1708,33 @@ function showWelcome(fullName, username) {
   greetEl.textContent = isFirst ? 'Welcome to axis,' : 'Welcome back,';
   nameEl.textContent  = fullName || username || 'User';
 
-  // Halo persona in idle mode
-  if (_welcomeHalo) { _welcomeHalo.destroy(); _welcomeHalo = null; }
-  persona.innerHTML = '';
-  _welcomeHalo = new HaloPersona(persona, 88);
+  // Platform: cache original text so re-splitting on repeated logins doesn't compound
+  if (platformEl) {
+    if (!platformEl.dataset.orig) platformEl.dataset.orig = platformEl.textContent;
+    platformEl.textContent = platformEl.dataset.orig;
+    _wcSplitChars(platformEl, 'wc-char-fade', 280, 'ease', 200, 30);
+  }
 
-  // Restart progress bar animation
-  progress.style.animation = 'none';
-  progress.offsetHeight; // reflow
-  progress.style.animation = 'welcomeProgress 3s linear forwards';
+  // Name: each character drops in from above with spring overshoot
+  _wcSplitChars(nameEl, 'wc-name-char', 500, 'cubic-bezier(.34,1.56,.64,1)', 600, 40);
 
-  card.classList.remove('out');
+  // Reset animation state: briefly remove from layout so all keyframes restart cleanly
+  modal.style.display = 'none';
+  modal.classList.remove('wc-out');
+  modal.offsetHeight; // force reflow
   modal.style.display = 'flex';
 
-  _welcomeTimer = setTimeout(dismissWelcome, 3000);
+  _welcomeTimer = setTimeout(dismissWelcome, 2000);
 }
 
 function dismissWelcome() {
   clearTimeout(_welcomeTimer);
   const modal = document.getElementById('welcome-modal');
-  const card  = document.getElementById('welcome-card');
-  card.classList.add('out');
+  if (modal.style.display === 'none') return;
+  modal.classList.add('wc-out');
   setTimeout(() => {
     modal.style.display = 'none';
-    card.classList.remove('out');
-    if (_welcomeHalo) { _welcomeHalo.destroy(); _welcomeHalo = null; }
+    modal.classList.remove('wc-out');
     const app = document.getElementById('app');
     app.style.display = 'flex';
     app.style.animation = 'fadeIn .5s ease';
@@ -1243,7 +1746,7 @@ function dismissWelcome() {
       const _tourUser = state.user;
       setTimeout(() => TourManager.start({ username: _tourUser }), 650);
     }
-  }, 240);
+  }, 350);
 }
 
 // ── Confirm Modal ──────────────────────────────────────────────────────────
@@ -1311,7 +1814,7 @@ async function login() {
     state.role     = data.role;
     state.fullName = data.full_name;
     err.style.display = 'none';
-    document.getElementById('sidebar-username').textContent = data.full_name || data.username;
+    initProfile(data.full_name || data.username);
     applyRBAC();
     const ls = document.getElementById('login-screen');
     ls.style.animation = 'fadeOut .5s ease forwards';
@@ -1327,16 +1830,19 @@ async function login() {
 
 function applyRBAC() {
   const isAdmin = state.role === 'admin';
-  // ETL controls: admin only
-  const etlBtn = document.getElementById('etl-trigger-btn');
-  if (etlBtn) etlBtn.style.display = isAdmin ? '' : 'none';
-  // Activity + Evaluation nav items: admin only
+  // Sidebar ETL button: admin only
+  const sidebarEtl = document.getElementById('etl-row');
+  if (sidebarEtl) sidebarEtl.style.display = isAdmin ? '' : 'none';
+  // Activity + Evaluation + Users nav items: admin only
   const actNav = document.querySelector('.nav-item[data-view="activity"]');
   if (actNav) actNav.style.display = isAdmin ? '' : 'none';
   const evalNav = document.getElementById('nav-evaluation');
   if (evalNav) evalNav.style.display = isAdmin ? '' : 'none';
   const usersNav = document.getElementById('nav-users');
   if (usersNav) usersNav.style.display = isAdmin ? '' : 'none';
+  // Profile role badge
+  const roleEl = document.getElementById('sidebar-profile-role');
+  if (roleEl) roleEl.textContent = state.role || '';
   // Activity table header: add Username column for admin
   const headerRow = document.querySelector('#view-activity thead tr');
   if (headerRow) {
@@ -1357,6 +1863,7 @@ function logout() {
   state.user     = null;
   state.role     = null;
   state.fullName = null;
+  closeProfilePopover();
   stopPolling();
   state.crmLoaded = false;
   state.finLoaded = false;
@@ -1407,6 +1914,8 @@ function navigate(view) {
     loadConversations();
   } else if (view === 'users') {
     loadUsers();
+  } else if (view === 'agents') {
+    loadAgents();
   }
 }
 
@@ -1618,7 +2127,7 @@ async function loadCRM() {
       apiFetch('/api/crm/kpis'           + qs),
       apiFetch('/api/crm/revenue-trend'  + qs),
       apiFetch('/api/crm/win-rate'       + qs),
-      apiFetch('/api/crm/pipeline-stage' + qs),
+      apiFetch('/api/crm/pipeline-value' + qs),
       apiFetch('/api/crm/top-clients'    + qs),
       apiFetch('/api/crm/new-vs-closed'  + qs),
       apiFetch('/api/crm/deal-size'      + qs),
@@ -1686,22 +2195,35 @@ function renderWinRate(rows) {
 }
 
 function renderPipeline(rows) {
-  if (!rows.length) return;
+  if (!rows.length) { _showNoData('chart-pipeline'); return; }
+  const stageOrder = ['Prospecting', 'Qualification', 'Proposal', 'Negotiation'];
+  const sorted = stageOrder
+    .map(s => rows.find(r => r.stage === s))
+    .filter(Boolean);
+  const stageColors = [CHART_PALETTE[4], CHART_PALETTE[0], CHART_PALETTE[2], CHART_PALETTE[3]];
   const layout = Object.assign({}, PLOTLY_BASE, {
-    funnelmode: 'stack',
     hovermode: 'closest',
-    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, { type: 'category', tickfont: {size: 11}, automargin: true }),
-    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, { tickfont: {size: 11}, automargin: true }),
-    margin: { l: 80, r: 30, t: 40, b: 60 },
+    xaxis: Object.assign({}, PLOTLY_BASE.xaxis, {
+      title: 'Value (TND)', tickfont: {size: 11}, automargin: true,
+      tickformat: ',.0f',
+    }),
+    yaxis: Object.assign({}, PLOTLY_BASE.yaxis, {
+      type: 'category', tickfont: {size: 11}, automargin: true,
+    }),
+    margin: { l: 120, r: 140, t: 40, b: 60 },
+    showlegend: false,
   });
   Plotly.newPlot('chart-pipeline', [{
-    type: 'funnel',
-    y: rows.map(r => r.stage),
-    x: rows.map(r => r.deal_count),
-    textinfo: 'value+percent initial',
-    marker: { color: CHART_PALETTE[4] },
-    connector: { line: { color: COLORS.grid, width: 1 } },
-    hovertemplate: '<b>%{y}</b><br>Deals: %{x:,}<extra></extra>',
+    type: 'bar', orientation: 'h',
+    x: sorted.map(r => r.total_value),
+    y: sorted.map(r => r.stage),
+    customdata: sorted.map(r => [r.stage, r.deal_count]),
+    marker: { color: stageColors.slice(0, sorted.length) },
+    text: sorted.map(r => fmt(r.total_value) + ' TND'),
+    textposition: 'outside',
+    hoverinfo: 'x+y+text',
+    hoverlabel: PLOTLY_BASE.hoverlabel,
+    hovertemplate: '<b>%{customdata[0]}</b><br>Value: %{x:,.0f} TND<br>Deals: %{customdata[1]:,}<extra></extra>',
   }], layout, PLOTLY_CFG);
 }
 
@@ -1769,7 +2291,7 @@ function renderDealSize(rows) {
     values: rows.map(r => r.deal_count),
     marker: { colors: palette },
     textinfo: 'percent+label',
-    textfont: { color: '#1E2D3D', size: 11 },
+    textfont: { color: isDark() ? '#e2e8f0' : '#1E2D3D', size: 11 },
     hovertemplate: '<b>%{label}</b><br>Deals: %{value:,}<br>%{percent}<extra></extra>',
   }], layout, PLOTLY_CFG);
 }
@@ -1884,7 +2406,7 @@ function renderStatusDist(rows) {
     values: rows.map(r=>r.invoice_count),
     marker: { colors: rows.map(r=>colorMap[r.status]||CHART_PALETTE[4]) },
     textinfo: 'percent+label',
-    textfont: { color: '#1E2D3D', size: 11 },
+    textfont: { color: isDark() ? '#e2e8f0' : '#1E2D3D', size: 11 },
     hovertemplate: '<b>%{label}</b><br>Invoices: %{value:,}<br>%{percent}<extra></extra>',
   }], layout, PLOTLY_CFG);
 }
@@ -1999,6 +2521,7 @@ const MODULE_TO_SUBAGENT = {
   'Finance':            'finance',
   'Data Analyst':       'data',
   'Orchestrator':       'orchestrator',
+  'Meta Agent':         'orchestrator',
 };
 
 function detectSubagent(text) {
@@ -2032,7 +2555,7 @@ function setSubagentActive(which) {
     } else {
       dot.style.background = '#D8E4F0';
       status.textContent   = 'Standby';
-      status.style.color   = '#5A7090';
+      status.style.color   = isDark() ? '#9ab5cc' : '#5A7090';
       card.classList.remove('active');
     }
   });
@@ -2047,7 +2570,7 @@ function resetSubagents() {
     const isOrch = a === 'orchestrator';
     dot.style.background = isOrch ? '#4A90E2' : '#D8E4F0';
     status.textContent   = isOrch ? 'Active' : 'Standby';
-    status.style.color   = isOrch ? '#4A90E2' : '#5A7090';
+    status.style.color   = isOrch ? '#4A90E2' : (isDark() ? '#9ab5cc' : '#5A7090');
     card.classList.remove('active');
   });
 }
@@ -2678,6 +3201,7 @@ async function loadCharts() {
       const card = document.createElement('div');
       card.className = 'my-chart-card';
       card.id = `my-chart-card-${chart.chart_id}`;
+      card.dataset.period = chart.period || 'all';
       card.innerHTML = `
         <div class="my-chart-card-header">
           <div class="my-chart-title" title="${chart.title}">${chart.title}</div>
@@ -2764,18 +3288,10 @@ function filterCharts(period) {
   document.querySelectorAll('.chart-filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.period === period);
   });
-  const now   = new Date();
-  const cards = document.querySelectorAll('.my-chart-card');
-  cards.forEach(card => {
-    const timeEl = card.querySelector('.my-chart-time');
-    if (!timeEl || !timeEl.textContent.trim()) { card.style.display = ''; return; }
-    const dateStr = timeEl.getAttribute('data-iso') || timeEl.textContent;
-    const d = new Date(dateStr);
-    let show = true;
-    if (period === 'year')    show = d.getFullYear() === now.getFullYear();
-    if (period === 'quarter') show = d.getFullYear() === now.getFullYear() && Math.floor(d.getMonth() / 3) === Math.floor(now.getMonth() / 3);
-    if (period === 'month')   show = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    card.style.display = show ? '' : 'none';
+  document.querySelectorAll('.my-chart-card').forEach(card => {
+    if (period === 'all') { card.style.display = ''; return; }
+    const cp = card.dataset.period;
+    card.style.display = (cp && cp !== 'all' && cp === period) ? '' : 'none';
   });
 }
 
@@ -3186,6 +3702,476 @@ function confirmClearAllCharts() {
     onConfirm: clearAllCharts,
   });
 }
+
+// ── Agents View ─────────────────────────────────────────────────────────────
+
+let _agentFilter = 'all';
+let _agentsData  = [];
+
+async function loadAgents() {
+  const grid = document.getElementById('agents-grid-container');
+  grid.innerHTML = '<div class="agents-loading"><span class="spinner"></span>&nbsp;Loading agents...</div>';
+  try {
+    const data = await apiFetch('/api/dynamic-agents');
+    if (!data) return;
+    _agentsData = data.agents || [];
+    _renderAgentCards(_agentsData);
+  } catch(e) {
+    grid.innerHTML = '<div class="agents-empty">Failed to load agents.</div>';
+  }
+}
+
+function filterAgents(status) {
+  _agentFilter = status;
+  document.querySelectorAll('.agent-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.status === status);
+  });
+  const filtered = status === 'all' ? _agentsData : _agentsData.filter(a => a.status === status);
+  _renderAgentCards(filtered);
+}
+
+function _renderAgentCards(agents) {
+  const grid = document.getElementById('agents-grid-container');
+  if (!agents || !agents.length) {
+    grid.innerHTML = '<div class="agents-empty" id="agents-empty-state">No agents found.</div>';
+    return;
+  }
+  grid.innerHTML = '<div class="agents-grid" id="agents-grid">' +
+    agents.map(a => _agentCardHTML(a)).join('') +
+    '</div>';
+}
+
+function _agentCardHTML(a) {
+  const statusClass = a.status === 'active'   ? 'agent-status-active'   :
+                      a.status === 'disabled'  ? 'agent-status-disabled' : 'agent-status-draft';
+  const statusLabel = a.status.charAt(0).toUpperCase() + a.status.slice(1);
+  const validBadge  = a.all_valid
+    ? '<span class="agent-valid-badge">All tools valid</span>'
+    : '<span class="agent-invalid-badge">Validation issues</span>';
+  return (
+    '<div class="agent-card" onclick="openAgentDetail(' + a.id + ')">' +
+      '<div class="agent-card-header">' +
+        '<div class="agent-card-name">' + _escHtml(a.name) + '</div>' +
+        '<span class="agent-status-badge ' + statusClass + '">' + statusLabel + '</span>' +
+      '</div>' +
+      '<div class="agent-card-desc">' + _escHtml(a.description) + '</div>' +
+      '<div class="agent-card-footer">' +
+        '<span class="agent-tool-count">' + a.tool_count + ' tool' + (a.tool_count !== 1 ? 's' : '') + '</span>' +
+        validBadge +
+      '</div>' +
+    '</div>'
+  );
+}
+
+async function openAgentDetail(agentId) {
+  try {
+    const agent = await apiFetch('/api/dynamic-agents/' + agentId);
+    if (!agent) return;
+    _showAgentModal(agent);
+  } catch(e) {
+    console.error('Failed to load agent detail', e);
+  }
+}
+
+function _showAgentModal(agent) {
+  document.getElementById('adm-name').textContent = agent.name;
+
+  const badge = document.getElementById('adm-status-badge');
+  badge.textContent = agent.status.charAt(0).toUpperCase() + agent.status.slice(1);
+  badge.className = 'agent-status-badge ' +
+    (agent.status === 'active'  ? 'agent-status-active'   :
+     agent.status === 'disabled'? 'agent-status-disabled' : 'agent-status-draft');
+
+  document.getElementById('adm-desc').textContent = agent.description || '';
+
+  const kwEl = document.getElementById('adm-keywords');
+  kwEl.innerHTML = (agent.keyword_rules || [])
+    .map(k => '<span class="adm-keyword-pill">' + _escHtml(k) + '</span>')
+    .join('');
+
+  const toolsEl = document.getElementById('adm-tools');
+  toolsEl.innerHTML = (agent.tools || []).map(t => (
+    '<div class="adm-tool">' +
+      '<div class="adm-tool-header">' +
+        '<span class="adm-tool-name">' + _escHtml(t.tool_name) + '</span>' +
+        '<span class="adm-tool-ast ' + (t.ast_validation_passed ? 'pass' : 'fail') + '">AST: ' + (t.ast_validation_passed ? 'Pass' : 'Fail') + '</span>' +
+        '<span class="adm-tool-sandbox ' + (t.sandbox_test_passed ? 'pass' : 'fail') + '">Sandbox: ' + (t.sandbox_test_passed ? 'Pass' : 'Fail') + '</span>' +
+      '</div>' +
+      '<div class="adm-tool-desc">' + _escHtml(t.description) + '</div>' +
+      (t.test_log ? '<pre class="adm-tool-log">' + _escHtml(t.test_log) + '</pre>' : '') +
+    '</div>'
+  )).join('');
+
+  const isAdmin = state.role === 'admin';
+  const actEl   = document.getElementById('adm-actions');
+  if (isAdmin && (agent.status === 'draft' || agent.status === 'disabled')) {
+    actEl.innerHTML =
+      '<button class="adm-btn adm-btn-close" onclick="closeAgentModal()">Close</button>' +
+      '<button class="adm-btn adm-btn-activate" onclick="activateAgent(' + agent.id + ')">Activate</button>';
+  } else if (isAdmin && agent.status === 'active') {
+    actEl.innerHTML =
+      '<button class="adm-btn adm-btn-close" onclick="closeAgentModal()">Close</button>' +
+      '<button class="adm-btn adm-btn-disable" onclick="disableAgent(' + agent.id + ')">Disable</button>';
+  } else {
+    actEl.innerHTML = '<button class="adm-btn adm-btn-close" onclick="closeAgentModal()">Close</button>';
+  }
+
+  document.getElementById('agent-detail-modal').style.display = 'flex';
+}
+
+function closeAgentModal() {
+  document.getElementById('agent-detail-modal').style.display = 'none';
+}
+
+function activateAgent(agentId) {
+  showConfirmModal({
+    title: 'Activate agent?',
+    message: 'This agent will be available to route messages from the chat interface.',
+    confirmText: 'Activate',
+    icon: 'warn',
+    onConfirm: async () => {
+      try {
+        await apiFetch('/api/dynamic-agents/' + agentId + '/activate', {method: 'POST'});
+        closeAgentModal();
+        loadAgents();
+      } catch(e) {
+        alert('Failed to activate: ' + e.message);
+      }
+    },
+  });
+}
+
+function disableAgent(agentId) {
+  showConfirmModal({
+    title: 'Disable agent?',
+    message: 'This agent will stop routing messages. It can be re-activated later.',
+    confirmText: 'Disable',
+    icon: 'warn',
+    onConfirm: async () => {
+      try {
+        await apiFetch('/api/dynamic-agents/' + agentId + '/disable', {method: 'POST'});
+        closeAgentModal();
+        loadAgents();
+      } catch(e) {
+        alert('Failed to disable: ' + e.message);
+      }
+    },
+  });
+}
+
+function _escHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Dark Mode ──────────────────────────────────────────────────────────────
+function toggleDarkMode() {
+  const dark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('axis_dark_mode', dark ? '1' : '0');
+  const moon = document.getElementById('dark-icon-moon');
+  const sun  = document.getElementById('dark-icon-sun');
+  if (moon) moon.style.display = dark ? 'none' : '';
+  if (sun)  sun.style.display  = dark ? ''     : 'none';
+  _updatePlotlyBase(dark);
+  _relayoutAllCharts(dark);
+}
+
+function _syncDarkToggleIcons() {
+  const isDark = document.documentElement.classList.contains('dark');
+  const moon = document.getElementById('dark-icon-moon');
+  const sun  = document.getElementById('dark-icon-sun');
+  if (moon) moon.style.display = isDark ? 'none' : '';
+  if (sun)  sun.style.display  = isDark ? ''     : 'none';
+}
+
+// ── Profile ────────────────────────────────────────────────────────────────
+function initProfile(displayName) {
+  const savedName = localStorage.getItem('axis_profile_name');
+  const savedPic  = localStorage.getItem('axis_profile_pic');
+  const name = savedName || displayName || state.user || '';
+
+  const nameEl = document.getElementById('sidebar-profile-name');
+  if (nameEl) nameEl.textContent = name;
+
+  const nameInput = document.getElementById('profile-name-input');
+  if (nameInput) nameInput.value = name;
+
+  _updateAvatarElements(savedPic, name);
+  _syncDarkToggleIcons();
+}
+
+function _updateAvatarElements(picDataUrl, name) {
+  const sidebarAvatar = document.getElementById('sidebar-avatar');
+  const popoverAvatar = document.getElementById('profile-avatar-lg');
+
+  if (picDataUrl) {
+    const imgHtml = `<img src="${picDataUrl}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    if (sidebarAvatar) sidebarAvatar.innerHTML = imgHtml;
+    if (popoverAvatar) popoverAvatar.innerHTML = imgHtml;
+  } else {
+    const svgSm = `<svg width="18" height="18" viewBox="0 0 78 78" fill="none"><path d="M14 66L39 12L64 66" fill="none" stroke="#63AEFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 46 A18 18 0 0 0 54 46" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="4" stroke-linecap="round"/><circle cx="39" cy="55" r="3.5" fill="rgba(255,255,255,0.55)"/></svg>`;
+    const svgLg = `<svg width="28" height="28" viewBox="0 0 78 78" fill="none"><path d="M14 66L39 12L64 66" fill="none" stroke="#63AEFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 46 A18 18 0 0 0 54 46" fill="none" stroke="#1A3355" stroke-width="4" stroke-linecap="round"/><circle cx="39" cy="55" r="3.5" fill="#1A3355"/></svg>`;
+    if (sidebarAvatar) sidebarAvatar.innerHTML = svgSm;
+    if (popoverAvatar) popoverAvatar.innerHTML = svgLg;
+  }
+}
+
+function saveProfileName() {
+  const input = document.getElementById('profile-name-input');
+  const name  = input ? input.value.trim() : '';
+  if (!name) return;
+  localStorage.setItem('axis_profile_name', name);
+  const nameEl = document.getElementById('sidebar-profile-name');
+  if (nameEl) nameEl.textContent = name;
+  showStatusToast('Profile updated', 'success');
+}
+
+function handleProfilePicChange(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    localStorage.setItem('axis_profile_pic', dataUrl);
+    const savedName = localStorage.getItem('axis_profile_name') || '';
+    _updateAvatarElements(dataUrl, savedName);
+  };
+  reader.readAsDataURL(file);
+}
+
+let _popoverOutsideHandler = null;
+
+function toggleProfilePopover(e) {
+  if (e) e.stopPropagation();
+  const pop = document.getElementById('profile-popover');
+  if (!pop) return;
+  pop.style.display = '';
+  const isOpen = pop.classList.toggle('open');
+  if (isOpen) {
+    const nameEl    = document.getElementById('sidebar-profile-name');
+    const nameInput = document.getElementById('profile-name-input');
+    if (nameInput && nameEl) nameInput.value = nameEl.textContent;
+    if (_popoverOutsideHandler) document.removeEventListener('click', _popoverOutsideHandler);
+    _popoverOutsideHandler = function(ev) {
+      const p = document.getElementById('profile-popover');
+      const s = document.getElementById('sidebar-profile');
+      if (p && !p.contains(ev.target) && s && !s.contains(ev.target)) {
+        p.classList.remove('open');
+      }
+    };
+    setTimeout(() => document.addEventListener('click', _popoverOutsideHandler), 0);
+  } else {
+    if (_popoverOutsideHandler) {
+      document.removeEventListener('click', _popoverOutsideHandler);
+      _popoverOutsideHandler = null;
+    }
+  }
+}
+
+function closeProfilePopover() {
+  const pop = document.getElementById('profile-popover');
+  if (pop) pop.classList.remove('open');
+  if (_popoverOutsideHandler) {
+    document.removeEventListener('click', _popoverOutsideHandler);
+    _popoverOutsideHandler = null;
+  }
+}
+
+function replayTour() {
+  closeProfilePopover();
+  const pop = document.getElementById('profile-popover');
+  if (pop) pop.style.display = 'none';
+
+  if (typeof navigate === 'function') navigate('dashboard');
+
+  setTimeout(function() {
+    const username = (window.state && state.user) || null;
+    localStorage.removeItem('axis_tour_done_' + username);
+    localStorage.removeItem('axis_tour_done');
+
+    if (window.TourManager && TourManager._activeTour) {
+      try {
+        TourManager._activeTour.off('cancel');
+        TourManager._activeTour.off('complete');
+        if (typeof TourManager._activeTour.isActive === 'function' && TourManager._activeTour.isActive()) {
+          TourManager._activeTour.cancel();
+        }
+        if (typeof TourManager._activeTour.destroy === 'function') {
+          TourManager._activeTour.destroy();
+        }
+      } catch(e) {}
+      TourManager._activeTour = null;
+    }
+
+    TourManager.start({ username: username, force: true });
+  }, 800);
+}
+
+// ── Sidebar ETL ────────────────────────────────────────────────────────────
+let _etlSidebarPoll = null;
+
+async function triggerSidebarETL() {
+  const btn = document.getElementById('sidebar-etl-btn');
+  if (btn && btn.disabled) return;
+  if (state.etlStatus === 'running') {
+    showStatusToast('ETL is already running', 'info');
+    return;
+  }
+  _etlSetRunning();
+  try {
+    // Read token identically to apiFetch — sessionStorage set by the login handler
+    const token = sessionStorage.getItem('axis_token');
+    const res = await fetch('/api/etl/trigger', {
+      method: 'POST',
+      headers: Object.assign(
+        { 'Accept': 'application/json' },
+        token ? { 'Authorization': `Bearer ${token}` } : {}
+      ),
+    });
+    // Always read body before branching so errors appear in the console
+    let body = null;
+    try { body = await res.json(); } catch(_) {}
+    console.log('[ETL trigger] status:', res.status, 'body:', body);
+
+    if (res.status === 401) {
+      // Token expired — apiFetch convention: logout and surface the error
+      logout();
+      _etlFinishSidebar('failed', 'ETL auth error — session expired, please log in again');
+      return;
+    }
+    if (!res.ok) {
+      // 403, 422, 500, etc. — surface FastAPI's detail if present
+      const detail = (body && body.detail) ? body.detail : `HTTP ${res.status}`;
+      console.error('[ETL trigger] failed:', detail);
+      _etlFinishSidebar('failed', `ETL trigger failed: ${detail}`);
+      return;
+    }
+    if (body && body.status === 'already_running') {
+      showStatusToast('ETL already running — tracking…', 'info');
+    }
+    _startETLSidebarPoll();
+  } catch(err) {
+    // Network error (DNS, CORS, connection refused) — never reached the backend
+    console.error('[ETL trigger] network error:', err.message);
+    _etlFinishSidebar('failed', 'ETL network error: ' + err.message);
+  }
+}
+
+function _etlSetRunning() {
+  const btn       = document.getElementById('sidebar-etl-btn');
+  const label     = document.getElementById('sidebar-etl-label');
+  const arc       = document.getElementById('etl-ring-arc');
+  const fill      = document.getElementById('etl-fill-bar');
+  const cancelBtn = document.getElementById('sidebar-etl-cancel-btn');
+  state.etlStatus = 'running';
+  if (arc)       { arc.setAttribute('stroke-dasharray','20 36.55'); arc.setAttribute('stroke-dashoffset','0'); }
+  if (btn)       { btn.disabled = true; btn.classList.remove('etl-done','etl-success','etl-error'); btn.classList.add('running'); }
+  if (label)     { label.textContent = '0 / 5'; label.removeAttribute('title'); }
+  if (fill)      { fill.style.width = '0%'; fill.className = 'etl-fill-bar'; }
+  if (cancelBtn) { cancelBtn.classList.add('visible'); cancelBtn.disabled = false; }
+}
+
+function _updateETLProgress(step, total, stepName) {
+  const pct   = total > 0 ? Math.min(Math.round(step / total * 100), 100) : 0;
+  const fill  = document.getElementById('etl-fill-bar');
+  const label = document.getElementById('sidebar-etl-label');
+  const tip   = document.getElementById('etl-tooltip');
+  if (fill)  { fill.style.width = pct + '%'; fill.classList.toggle('etl-full', pct >= 100); }
+  if (label) { label.textContent = step + ' / ' + total; label.title = stepName || ''; }
+  if (tip)   tip.textContent = stepName || 'Running…';
+}
+
+function _startETLSidebarPoll() {
+  if (_etlSidebarPoll) clearInterval(_etlSidebarPoll);
+  _etlSidebarPoll = setInterval(async () => {
+    try {
+      const d = await apiFetch('/api/etl/status');
+      if (!d) {
+        // apiFetch returns null on 401 (and calls logout)
+        clearInterval(_etlSidebarPoll); _etlSidebarPoll = null;
+        _etlFinishSidebar('failed', 'ETL status poll: session expired');
+        return;
+      }
+      console.log('[ETL poll] status:', d.status);
+      if (d.status === 'running') {
+        _updateETLProgress(d.step || 0, d.total || 5, d.step_name || '');
+      } else if (d.status === 'success') {
+        clearInterval(_etlSidebarPoll); _etlSidebarPoll = null;
+        _etlFinishSidebar('success', 'ETL pipeline completed successfully');
+      } else if (d.status === 'failed') {
+        clearInterval(_etlSidebarPoll); _etlSidebarPoll = null;
+        _etlFinishSidebar('failed', 'ETL pipeline failed — check server logs');
+      }
+    } catch(err) {
+      console.warn('[ETL poll] error:', err.message);
+    }
+  }, 200);
+}
+
+async function cancelETL() {
+  const cancelBtn = document.getElementById('sidebar-etl-cancel-btn');
+  if (cancelBtn) cancelBtn.disabled = true;
+  try {
+    const token = sessionStorage.getItem('axis_token');
+    const res = await fetch('/api/etl/cancel', {
+      method: 'POST',
+      headers: Object.assign(
+        { 'Accept': 'application/json' },
+        token ? { 'Authorization': `Bearer ${token}` } : {}
+      ),
+    });
+    let body = null;
+    try { body = await res.json(); } catch(_) {}
+    if (res.ok && body && (body.status === 'cancelled' || body.status === 'not_running')) {
+      if (_etlSidebarPoll) { clearInterval(_etlSidebarPoll); _etlSidebarPoll = null; }
+      _etlFinishSidebar('failed', 'ETL cancelled');
+    } else {
+      const detail = (body && body.detail) ? body.detail : `HTTP ${res.status}`;
+      showStatusToast('Cancel failed: ' + detail, 'error');
+      if (cancelBtn) cancelBtn.disabled = false;
+    }
+  } catch(err) {
+    showStatusToast('Cancel error: ' + err.message, 'error');
+    if (cancelBtn) cancelBtn.disabled = false;
+  }
+}
+
+function _etlFinishSidebar(result, msg) {
+  const btn       = document.getElementById('sidebar-etl-btn');
+  const label     = document.getElementById('sidebar-etl-label');
+  const arc       = document.getElementById('etl-ring-arc');
+  const fill      = document.getElementById('etl-fill-bar');
+  const cancelBtn = document.getElementById('sidebar-etl-cancel-btn');
+  state.etlStatus = result;
+  const isCancelled = msg && msg.toLowerCase().includes('cancel');
+  if (arc)       { arc.setAttribute('stroke-dasharray','56.55'); arc.setAttribute('stroke-dashoffset','0'); }
+  if (btn)       { btn.disabled = false; btn.classList.remove('running'); btn.classList.add('etl-done', result === 'success' ? 'etl-success' : 'etl-error'); }
+  if (label)     { label.textContent = result === 'success' ? 'Done' : (isCancelled ? 'Cancelled' : 'Failed'); label.removeAttribute('title'); }
+  if (fill)      { fill.style.width = '100%'; fill.classList.add('etl-full'); fill.classList.add(result === 'success' ? 'etl-success' : 'etl-error'); }
+  if (cancelBtn) { cancelBtn.classList.remove('visible'); cancelBtn.disabled = false; }
+  showStatusToast(msg, result === 'success' ? 'success' : 'error');
+  setTimeout(() => {
+    if (btn)       { btn.classList.remove('etl-done','etl-success','etl-error'); }
+    if (label)     { label.textContent = 'Run ETL'; }
+    if (arc)       { arc.setAttribute('stroke-dasharray','20 36.55'); arc.setAttribute('stroke-dashoffset','0'); }
+    if (fill)      { fill.style.width = '0%'; fill.className = 'etl-fill-bar'; }
+  }, 2000);
+}
+
+// ── Status Toast ───────────────────────────────────────────────────────────
+let _statusToastTimer = null;
+function showStatusToast(msg, type) {
+  const el = document.getElementById('status-toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'status-toast show' + (type ? ' ' + type : '');
+  if (_statusToastTimer) clearTimeout(_statusToastTimer);
+  _statusToastTimer = setTimeout(() => { el.className = 'status-toast'; }, 3500);
+}
 </script>
 
 <!-- Chart expand modal -->
@@ -3199,21 +4185,55 @@ function confirmClearAllCharts() {
   </div>
 </div>
 
-<!-- ── Welcome Modal ─────────────────────────────────────────────────────── -->
+<!-- ── Welcome Overlay ───────────────────────────────────────────────────── -->
 <div id="welcome-modal" onclick="dismissWelcome()">
-  <div class="welcome-backdrop"></div>
-  <div class="welcome-card" id="welcome-card" onclick="event.stopPropagation()">
-    <div class="welcome-persona" id="welcome-persona-container"></div>
-    <div class="welcome-subtitle">Operational Intelligence Platform</div>
-    <div class="welcome-greeting" id="welcome-greeting">Welcome back,</div>
-    <div class="welcome-name" id="welcome-name">User</div>
-    <div class="welcome-progress-wrap"><div class="welcome-progress-fill" id="welcome-progress-fill"></div></div>
+  <div class="wc-content" onclick="event.stopPropagation()">
+    <div class="wc-logo">
+      <svg width="62" height="62" viewBox="0 0 78 78" fill="none">
+        <path d="M14 66L39 12L64 66" fill="none" stroke="#63AEFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M24 46 A18 18 0 0 0 54 46" fill="none" stroke="rgba(255,255,255,.36)" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="39" cy="55" r="3.5" fill="rgba(255,255,255,.36)"/>
+      </svg>
+    </div>
+    <div class="wc-platform">Operational Intelligence Platform</div>
+    <div id="welcome-greeting">Welcome back,</div>
+    <div id="welcome-name">User</div>
+    <div class="wc-accent-line"></div>
   </div>
 </div>
 
 <!-- ── Product Tour ────────────────────────────────────────────────────────── -->
 <script src="/static/tour/shepherd-config.js"></script>
 <script src="/static/tour/tour-manager.js"></script>
+
+<!-- ── Agent Detail Modal ─────────────────────────────────────────────────── -->
+<div id="agent-detail-modal" onclick="closeAgentModal()">
+  <div class="adm-backdrop"></div>
+  <div class="adm-card" onclick="event.stopPropagation()">
+    <div class="adm-header">
+      <div class="adm-title-row">
+        <span class="adm-name" id="adm-name"></span>
+        <span class="agent-status-badge agent-status-draft" id="adm-status-badge"></span>
+      </div>
+      <button class="adm-close-x" onclick="closeAgentModal()">&#x2715;</button>
+    </div>
+    <div class="adm-body">
+      <div class="adm-section">
+        <div class="adm-label">Description</div>
+        <div class="adm-value" id="adm-desc"></div>
+      </div>
+      <div class="adm-section">
+        <div class="adm-label">Keywords</div>
+        <div class="adm-keywords" id="adm-keywords"></div>
+      </div>
+      <div class="adm-section">
+        <div class="adm-label">Tools</div>
+        <div id="adm-tools"></div>
+      </div>
+    </div>
+    <div class="adm-footer" id="adm-actions"></div>
+  </div>
+</div>
 
 <!-- ── Confirm Modal ──────────────────────────────────────────────────────── -->
 <div id="confirm-modal">

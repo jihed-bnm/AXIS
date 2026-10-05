@@ -52,11 +52,6 @@ function getAxisTourSteps(tour) {
         "AI Agent, Charts, and settings with a single click.",
         0, TOTAL
       ),
-      when: {
-        show() {
-          if (typeof navigate === 'function') navigate('dashboard');
-        },
-      },
       buttons: [
         { text: 'Skip Tour',   action: () => tour.cancel(),  classes: 'shepherd-button-secondary' },
         { text: "Let's go →",  action: () => tour.next(),    classes: 'shepherd-button-primary'   },

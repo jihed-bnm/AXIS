@@ -32,7 +32,7 @@ class DimDate(Base):
     day_name     = Column(String(20), nullable=False)
     is_weekend   = Column(Boolean, default=False)
     fiscal_year  = Column(Integer, nullable=False)  # same as calendar year for Tunisia
-    fiscal_quarter = Column(String(6), nullable=False)  # e.g. "FY2024Q1"
+    fiscal_quarter = Column(String(10), nullable=False)  # e.g. "FY2024Q1"
 
 
 class DimClient(Base):

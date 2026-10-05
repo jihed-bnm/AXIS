@@ -1,0 +1,460 @@
+[
+  {
+    "agent": "Sales Intelligence",
+    "tool": "get_total_won_deal_value",
+    "queries": [
+      "What is our total won deal value?",
+      "How much pipeline value have we closed this year?",
+      "Show me the total business we have booked so far — all time"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns the sum of all won deal values in TND, optionally filtered by month or year.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "list_companies",
+    "queries": [
+      "Show me all our client companies",
+      "List all prospect companies",
+      "Which companies do we have in the IT industry?"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns a paginated table of companies filtered by status ('client', 'prospect', 'inactive') and/or industry keyword.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "get_company",
+    "queries": [
+      "Tell me about BNA BANK",
+      "What do we know about poulina group?",
+      "Show me the full profile for Tunisair"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns full company profile including industry, city, phone, email, open deal count, and contact count.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "list_deals",
+    "queries": [
+      "Show me all open deals",
+      "What deals do we have with BNA BANK?",
+      "List won deals worth more than 30,000 TND"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns a deal table filtered by status, company name, and/or minimum TND value.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "get_deal",
+    "queries": [
+      "Show me the Implementation ERP deal",
+      "What is the status of the Consulting transformation digitale deal?",
+      "Find the Migration base de donnees deal"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns full deal details (stage, value, probability, company, notes) by title keyword match — title is preferred over numeric ID to avoid extraction issues.",
+    "flag": null,
+    "note": "Use title parameter (string) not deal_id (int) in demo queries to avoid the ID extraction bug."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "get_pipeline_summary",
+    "queries": [
+      "Give me a pipeline overview",
+      "How are our deals distributed across statuses?",
+      "How many open versus won deals do we have and what are the total values?"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns deal counts and total TND values grouped by outcome status (open/won/lost/on_hold) — no individual deal records.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "list_contacts",
+    "queries": [
+      "Show me all our contacts",
+      "Who are the contacts at BNA BANK?",
+      "Find contact Ahmed in the CRM"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns contacts table with first name, last name, role, company, and email — filterable by company name or contact name.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "list_activities",
+    "queries": [
+      "What activities are due this week?",
+      "Show me all pending activities for Tunisair",
+      "List all completed call activities"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns activities ordered by due date, filtered by due_this_week, completion status, or company name.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "create_company",
+    "queries": [
+      "Add a new prospect company called TechVision Sfax in the IT industry, based in Sfax",
+      "Register InnoSoft Tunis as a new prospect in Tunis, email contact@innosoft.tn",
+      "Create a new company: DataCore Bizerte, industry: Cloud Services, city: Bizerte"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Shows a preview of the new company record; creates it in the CRM only after the user confirms.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "update_company",
+    "queries": [
+      "Change BNA BANK's status to inactive",
+      "Update poulina group's phone number to +216 70 100 200",
+      "Set the website for UIB to www.uib.com.tn"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent first calls get_company to resolve the name to an integer ID, then previews the field changes; applies only after user confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Use company names (not raw numeric IDs) so the agent performs the two-step lookup internally."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "create_contact",
+    "queries": [
+      "Add a new contact: Rania Mansouri, CTO at BNA BANK, email r.mansouri@bnabank.tn",
+      "Create a contact for Karim Ferchichi, IT Director at Tunisair, phone +216 50 111 222",
+      "Register Leila Saidi as a Project Manager at cyberpark elghazala"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Shows preview of the new contact linked to the named company; creates only after user confirms.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "create_deal",
+    "queries": [
+      "Create a new deal for BNA BANK: ERP Migration Platform worth 120,000 TND",
+      "Open a new opportunity for BIAT — Digital Transformation Portal, 250,000 TND, qualification stage",
+      "Log a new deal for GlobalNet: Cloud Infrastructure Audit, 75,000 TND"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Shows deal preview (company, title, value, stage); agent looks up company by name internally and creates the deal on confirmation.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "update_deal_status",
+    "queries": [
+      "List open deals for BNA BANK and mark the Consulting transformation digitale deal as won",
+      "The Implementation ERP deal for groupe khalfallah digital fell through — mark it as lost",
+      "Put the Consulting transformation digitale deal for BNA BANK on hold"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls list_deals or get_deal to resolve the deal name to an integer ID, then previews the status change; applies on confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Use deal title keywords instead of numeric IDs; the agent should call list_deals first to find the correct deal_id."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "create_activity",
+    "queries": [
+      "Schedule a follow-up call with Tunisair for 2026-06-20, title: Contract Renewal Discussion",
+      "Log a meeting with BIAT on 2026-07-05 — Proposal Presentation for ERP Project",
+      "Create an email task for GlobalNet due 2026-06-10: send updated pricing proposal"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Shows activity preview with type, title, company, and due date; creates the activity only after user confirmation.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "delete_company",
+    "queries": [
+      "Remove the TestCorp company from the CRM — it was a test entry",
+      "Delete the duplicate TestCorp prospect"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls get_company to resolve the name to an integer ID, then previews the soft-delete; marks is_deleted=True on confirmation (record is preserved in DB).",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Always refer to the company by name; never ask the agent to delete a company by numeric ID directly from natural language."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "delete_contact",
+    "queries": [
+      "Remove the duplicate contact at topnet from our CRM",
+      "Delete the contact for Ahmed Benali — they've left the company"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls list_contacts to find the integer contact_id, then previews the soft-delete; applies on confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Refer to contacts by name and company; the agent must call list_contacts first to find the numeric ID."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "delete_deal",
+    "queries": [
+      "Delete the deal for Developpement tableau de bord at magasin mabrouk electronique — it's a test entry with a 23 TND value",
+      "Remove the Mise en place data warehouse deal for cafe carthage — value was entered as 42 TND"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls list_deals or get_deal to find the integer deal_id, then previews the soft-delete; applies on confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Use deal title and company name to identify the deal; never pass a raw deal_id from natural language."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "update_contact",
+    "queries": [
+      "Update the email for contact Leila Khelifi at UIB to l.khelifi@uib.tn",
+      "Change the role of the first contact at CNAM to IT Director"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls list_contacts to find the integer contact_id, then previews field updates; applies on confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Reference contacts by name and company so the agent performs the list_contacts lookup before calling update_contact."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "update_deal",
+    "queries": [
+      "Move the Implementation ERP deal for groupe khalfallah digital to the negotiation stage",
+      "Increase the value of the Consulting transformation digitale deal for BNA BANK to 55,000 TND",
+      "Set the probability on the Maintenance et support applicatif deal to 80%"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls get_deal or list_deals to find the integer deal_id, then previews field changes (stage, value, probability, notes); applies on confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Use deal title keywords so the agent can look up the deal_id without LLM integer extraction."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "mark_activity_done",
+    "queries": [
+      "Show me pending activities for Tunisair and mark the call activity as done",
+      "List activities for Banque de Tunisie and complete the pending call activity",
+      "Show me all pending email activities for GlobalNet and mark the renewal email as done"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls list_activities to display the activity ID in brackets (e.g. [3]), then previews completion; marks done=True on confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Always phrase as a two-step query (list first, then mark done) — the agent reads the bracketed ID from list_activities output rather than extracting it from user text."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "get_at_risk_clients",
+    "queries": [
+      "Which clients should I worry about losing?",
+      "Show me all companies with churn signals from the warehouse",
+      "Who are our most at-risk accounts right now?"
+    ],
+    "difficulty": "Showcase",
+    "expected_behavior": "Returns a ranked list (up to 10) of companies with the most churn signals from warehouse.fact_activities, including signal count and last signal date.",
+    "flag": null
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "predict_churn",
+    "queries": [
+      "What is the churn risk for BNA BANK?",
+      "Is Tunisair at risk of churning?",
+      "Run a churn prediction for GlobalNet and give me the recommendations"
+    ],
+    "difficulty": "Showcase",
+    "expected_behavior": "Runs ML churn model for the named company; returns probability, risk level (High/Medium/Low), top contributing factors, and retention recommendations.",
+    "flag": null,
+    "note": "SAFE — deterministic bypass extracts company name via regex without LLM integer extraction."
+  },
+  {
+    "agent": "Sales Intelligence",
+    "tool": "predict_deal_win",
+    "queries": [
+      "What are the odds on deal 11?",
+      "Will we win deal 3?",
+      "Predict the outcome of deal 8"
+    ],
+    "difficulty": "Showcase",
+    "expected_behavior": "Runs ML win/loss model for the specified deal ID; returns win probability, outcome label (Likely Win / Uncertain / Likely Loss), and top contributing factors.",
+    "flag": null,
+    "note": "SAFE — deterministic bypass in crm_specialist.py extracts deal_id via regex (\\bdeal\\s+(?:id\\s+|#\\s*)?(\\d+)\\b) before the LLM is invoked."
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "list_invoices",
+    "queries": [
+      "Show me all invoices",
+      "List all overdue invoices",
+      "What invoices do we have for BNA BANK?"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns paginated invoice table with number, company, status, total, and due date — filterable by status and/or company name.",
+    "flag": null
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "get_invoice",
+    "queries": [
+      "Show me invoice JBM-2023-0008",
+      "Give me the full details of invoice JBM-2024-0034",
+      "What are the line items on invoice JBM-2024-0041?"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns full invoice detail including all line items, subtotal, TVA (19%), and grand total in TND.",
+    "flag": null,
+    "note": "SAFE — uses invoice_number string (e.g. 'JBM-2023-0008'), not integer invoice_id."
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "get_revenue_summary",
+    "queries": [
+      "What is our total revenue for all time?",
+      "How much did we collect in Q1 2025?",
+      "Show me the revenue summary for 2024"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns total collected revenue (paid invoices), pending amount (sent/draft), and overdue amount — optionally filtered by month, year, or quarter.",
+    "flag": null
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "get_overdue_invoices",
+    "queries": [
+      "Which invoices are past due?",
+      "Show me the top 5 most overdue invoices",
+      "Which clients are late on their payments?"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns overdue invoices sorted by most days past due, with invoice number, client, amount, due date, and days-overdue count.",
+    "flag": null
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "get_client_balance",
+    "queries": [
+      "How much does BNA BANK owe us?",
+      "What is the outstanding balance for poulina group?",
+      "Show me the total unpaid amount for STE Khalfallah & Fils"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns unpaid invoice balance for the named client broken down by status (draft/sent/overdue), with total outstanding and oldest invoice date.",
+    "flag": null
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "create_invoice",
+    "queries": [
+      "Create an invoice for BNA BANK for 5 days of consulting at 8,000 TND per day",
+      "Bill BIAT for an ERP implementation — 1 delivery at 150,000 TND, due in 45 days",
+      "Generate an invoice for Tunisair: Conseil et assistance technique:3:12000, Formation utilisateurs:1:5000"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Parses items_description in 'description:quantity:unit_price' format, computes 19% TVA, shows invoice preview; creates draft invoice on confirmation.",
+    "flag": null,
+    "note": "items_description must use 'description:quantity:unit_price' format with comma separators and no commas inside numbers."
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "mark_invoice_paid",
+    "queries": [
+      "Mark invoice JBM-2024-0041 as paid via bank transfer",
+      "The payment for JBM-2023-0008 just arrived — record it as paid by check",
+      "Invoice JBM-2024-0226 has been settled — mark it paid"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Shows payment preview with invoice number, amount, and method; records a Payment entry and sets invoice status to 'paid' on confirmation.",
+    "flag": null,
+    "note": "SAFE — uses invoice_number string not integer invoice_id."
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "send_invoice",
+    "queries": [
+      "Mark invoice INV-0037 as sent to the client",
+      "Flag invoice INV-0046 as dispatched",
+      "Change the status of INV-0048 to sent"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Shows invoice summary before updating status from 'draft' to 'sent' on confirmation — does not send any actual email.",
+    "flag": null,
+    "note": "SAFE — uses invoice_number string."
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "cancel_invoice",
+    "queries": [
+      "Cancel invoice JBM-2023-0022",
+      "Void the overdue invoice JBM-2024-0226 for centre medical bouzid",
+      "Mark invoice JBM-2023-0341 as cancelled"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Shows invoice details before setting status to 'cancelled' on confirmation; rejects requests to cancel already-paid invoices.",
+    "flag": null,
+    "note": "SAFE — uses invoice_number string. Cannot cancel paid invoices."
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "update_invoice",
+    "queries": [
+      "Extend the due date on invoice INV-0037 to 2026-08-01",
+      "Add a note to invoice INV-0046: client requested 45-day extension on payment terms",
+      "Push the deadline on INV-0048 back to 2026-09-15"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Shows the due_date or notes change before applying; rejects updates on paid or cancelled invoices.",
+    "flag": null,
+    "note": "SAFE — uses invoice_number string. Only due_date and notes are updatable; line item amounts cannot be changed."
+  },
+  {
+    "agent": "Finance & Invoicing",
+    "tool": "delete_invoice",
+    "queries": [
+      "Look up invoice JBM-2023-0022 and then delete it — it was entered in error",
+      "Show me invoice INV-0037 and remove it from the system"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls get_invoice to retrieve the integer invoice_id, then previews the soft-delete; sets is_deleted=True on confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Always look up the invoice by number first (get_invoice); the agent reads the integer ID from the tool result rather than extracting it from user text."
+  },
+  {
+    "agent": "Data Analyst",
+    "tool": "generate_chart",
+    "queries": [
+      "Generate a bar chart of total deal value by company from fact_deals",
+      "Create a line chart showing monthly revenue for 2024 from the fact_revenue table",
+      "Show a pie chart of activities broken down by type"
+    ],
+    "difficulty": "Showcase",
+    "expected_behavior": "Queries the specified warehouse table, builds a Plotly trace with correct labels and TND formatting, saves the config to axis_charts, and returns the chart_id for display.",
+    "flag": null,
+    "note": "Valid chart_types: bar, line, scatter, pie, donut, funnel, area. Valid data_sources: fact_deals, fact_revenue, fact_activities, dim_client. Use x_truncation='month' or 'year' for date columns."
+  },
+  {
+    "agent": "Data Analyst",
+    "tool": "list_saved_charts",
+    "queries": [
+      "What charts have we created so far?",
+      "Show me all saved charts",
+      "List all charts in the dashboard"
+    ],
+    "difficulty": "Basic",
+    "expected_behavior": "Returns all charts saved in the axis_charts table with their IDs, titles, types, and creation timestamps — optionally filtered by session_id.",
+    "flag": null
+  },
+  {
+    "agent": "Data Analyst",
+    "tool": "delete_chart",
+    "queries": [
+      "List all saved charts and then delete the oldest one",
+      "Show me my charts and remove the Revenue by Company bar chart"
+    ],
+    "difficulty": "Intermediate",
+    "expected_behavior": "Agent calls list_saved_charts to display integer chart_ids, then previews the deletion; permanently removes the record from axis_charts on confirmation.",
+    "flag": "ID_EXTRACTION_BUG",
+    "safe_phrasing_note": "Always phrase as a two-step query (list first, then delete by ID from the result); never ask the agent to delete a chart by a raw integer from user text alone."
+  }
+]

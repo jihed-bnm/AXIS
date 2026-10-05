@@ -109,9 +109,12 @@ def generate_chart(
     limit: int = 20,
     session_id: str = 'default',
     x_truncation: Optional[str] = None,
+    period: str = 'all',
 ) -> str:
     """Generate a Plotly chart from warehouse data and save it to axis_charts table.
-    Returns the chart_id and confirmation message.
+    Returns a confirmation message with chart_id on success, or a message starting with
+    CHART_FAILED: if the query produced no data or raised an error.
+    If the tool returns CHART_FAILED, do not report a chart was created.
     chart_type: bar, line, scatter, pie, donut, funnel, area
     data_source: fact_deals, fact_revenue, fact_activities, dim_client
     y_column: column name or 'count'
@@ -123,6 +126,9 @@ def generate_chart(
       Values: month, year, quarter, week, day.
       Example: x_column='invoice_date', x_truncation='month' groups revenue by calendar month.
       Produces clean x-axis labels (e.g. '2024-01', '2024-Q2'). Rows sort chronologically ASC.
+    period: data time range tag for the My Charts filter — 'all', 'year', 'quarter', or 'month'.
+      Set this to match the date scope of the underlying data query (e.g. 'year' if the data
+      covers the current year, 'month' if filtered to the current month). Defaults to 'all'.
     """
     if chart_type not in VALID_CHART_TYPES:
         return f"Invalid chart_type '{chart_type}'. Choose from: {', '.join(sorted(VALID_CHART_TYPES))}"
@@ -140,6 +146,8 @@ def generate_chart(
         return f"Invalid filter_column2 name: '{filter_column2}'."
     if x_truncation and x_truncation not in VALID_TRUNCATIONS:
         return f"Invalid x_truncation '{x_truncation}'. Choose from: {', '.join(sorted(VALID_TRUNCATIONS))}"
+    if period not in ('all', 'year', 'quarter', 'month'):
+        period = 'all'
 
     params: dict = {}
     where = _build_where(filter_column, filter_value, filter_column2, filter_value2, params)
@@ -170,7 +178,7 @@ def generate_chart(
         sql = (
             f'SELECT {select_part} FROM warehouse.{data_source}'
             f'{where}'
-            f' GROUP BY "{x_column}" ORDER BY value DESC LIMIT {int(min(limit, 100))}'
+            f' GROUP BY "{x_column}" ORDER BY value DESC NULLS LAST LIMIT {int(min(limit, 100))}'
         )
 
     try:
@@ -178,10 +186,10 @@ def generate_chart(
             result = conn.execute(text(sql), params)
             rows = result.fetchall()
     except Exception as e:
-        return f"Error querying data: {str(e)}"
+        return f"CHART_FAILED: Error querying data: {str(e)}"
 
     if not rows:
-        return "No data returned for this query. Try different filters or columns."
+        return "CHART_FAILED: No data returned for the given query. The table may be empty or the filters too restrictive."
 
     x_values = [str(r[0]) if r[0] is not None else 'N/A' for r in rows]
     y_values = [float(r[1]) if r[1] is not None else 0.0 for r in rows]
@@ -232,7 +240,7 @@ def generate_chart(
             'marker': {'color': '#6C63FF'},
             'connector': {'line': {'color': '#D8E4F0', 'width': 1}},
             'textinfo': 'value+percent initial',
-            'hovertemplate': f'<b>%{{label}}</b><br>{_y_label(y_column, aggregation)}: %{{value{y_fmt}<extra></extra>',
+            'hovertemplate': f'<b>%{{y}}</b><br>{_y_label(y_column, aggregation)}: %{{x{y_fmt}<extra></extra>',
         }
     else:
         trace = {
@@ -259,9 +267,9 @@ def generate_chart(
             result = conn.execute(
                 text("""
                     INSERT INTO public.axis_charts
-                        (title, chart_type, config, query_used, session_id)
+                        (title, chart_type, config, query_used, session_id, period)
                     VALUES
-                        (:title, :chart_type, :config, :query_used, :session_id)
+                        (:title, :chart_type, :config, :query_used, :session_id, :period)
                     RETURNING chart_id
                 """),
                 {
@@ -270,6 +278,7 @@ def generate_chart(
                     'config': config_json,
                     'query_used': sql,
                     'session_id': session_id,
+                    'period': period,
                 },
             )
             chart_id = result.fetchone()[0]

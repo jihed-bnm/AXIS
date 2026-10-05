@@ -136,6 +136,24 @@ def predict_deal_outcome(deal_id: int) -> dict:
         for feat, imp in top5.items()
     ]
 
+    # ── Step 4: Deterministic recommendations ────────────────────────────────
+    from backend.ml.recommendation_engine import generate_deal_recommendations
+    feature_dict = df_raw.iloc[0].to_dict()
+    recs = generate_deal_recommendations(feature_dict, prob)
+    recommendations = [
+        {
+            "priority":  r.priority,
+            "category":  r.category,
+            "action":    r.action,
+            "rationale": r.rationale,
+        }
+        for r in recs
+    ]
+
+    # ── Step 5: LLM summary ───────────────────────────────────────────────────
+    from backend.ml.deal_summarizer import summarize_deal
+    summary = summarize_deal(deal_title, company_name, prob, outcome, top_factors, recs)
+
     return {
         "deal_id": deal_id,
         "deal_title": deal_title,
@@ -143,4 +161,6 @@ def predict_deal_outcome(deal_id: int) -> dict:
         "win_probability": round(prob, 4),
         "outcome_prediction": outcome,
         "top_factors": top_factors,
+        "recommendations": recommendations,
+        "summary": summary,
     }

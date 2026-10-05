@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP AI Agent — Database Architecture</title>
+<style>
+  /* ── Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background: #fff;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 40px;
+  }
+
+  /* ── Typography ── */
+  h1 { font-size: 26px; color: #0f3460; border-bottom: 3px solid #0f3460; padding-bottom: 8px; margin-bottom: 6px; }
+  h2 { font-size: 18px; color: #16213e; background: #e8f0fe; padding: 6px 12px; border-left: 4px solid #0f3460; margin: 28px 0 12px; }
+  h3 { font-size: 14px; color: #0f3460; margin: 16px 0 6px; border-bottom: 1px dashed #ccd; padding-bottom: 3px; }
+  h4 { font-size: 13px; color: #444; margin: 12px 0 4px; }
+  p  { margin: 6px 0; }
+  ul, ol { margin: 6px 0 6px 20px; }
+  li { margin: 3px 0; }
+  strong { color: #0f3460; }
+
+  /* ── Cover ── */
+  .cover {
+    text-align: center;
+    padding: 60px 0 40px;
+    border-bottom: 2px solid #0f3460;
+    margin-bottom: 30px;
+  }
+  .cover h1 { border: none; font-size: 30px; margin-bottom: 10px; }
+  .cover .subtitle { font-size: 15px; color: #555; margin: 4px 0; }
+  .cover .date { font-size: 12px; color: #888; margin-top: 20px; }
+  .badge {
+    display: inline-block;
+    background: #0f3460;
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    margin: 2px;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 12px;
+  }
+  th {
+    background: #0f3460;
+    color: #fff;
+    padding: 7px 10px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td { padding: 6px 10px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9ff; }
+
+  /* ── Code / Monospace ── */
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #f0f4ff;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #c7254e;
+  }
+  pre {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 14px 16px;
+    border-radius: 6px;
+    font-size: 11px;
+    overflow-x: auto;
+    margin: 10px 0;
+    line-height: 1.5;
+  }
+  pre .kw  { color: #7ec8e3; }
+  pre .str { color: #a8e6cf; }
+  pre .cmt { color: #888; font-style: italic; }
+  pre .cls { color: #ffd700; }
+  pre .num { color: #ffb347; }
+
+  /* ── Boxes ── */
+  .box {
+    border: 1px solid #c5cae9;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    background: #f5f7ff;
+  }
+  .box-warn { background: #fff8e1; border-color: #ffc107; }
+  .box-info { background: #e3f2fd; border-color: #2196f3; }
+  .box-ok   { background: #e8f5e9; border-color: #4caf50; }
+
+  /* ── Diagram ── */
+  .diagram {
+    font-family: 'Consolas', monospace;
+    font-size: 11px;
+    background: #f0f4ff;
+    border: 1px solid #c5cae9;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 10px 0;
+    line-height: 1.8;
+    white-space: pre;
+  }
+
+  /* ── Flow step ── */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+    align-items: center;
+  }
+  .step {
+    background: #0f3460;
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .arrow { font-size: 14px; color: #0f3460; }
+
+  /* ── Two columns ── */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 10px 0; }
+  .col-box { border: 1px solid #c5cae9; border-radius: 6px; padding: 10px 14px; background: #fafbff; }
+  .col-box h4 { margin-top: 0; }
+
+  /* ── Section numbers ── */
+  .sec-num {
+    display: inline-block;
+    background: #0f3460;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 24px;
+    font-weight: bold;
+    font-size: 13px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { padding: 10px 20px; font-size: 12px; }
+    .cover { padding: 30px 0 20px; }
+    h2 { page-break-after: avoid; }
+    h3 { page-break-after: avoid; }
+    table, .diagram, pre { page-break-inside: avoid; }
+    .page-break { page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════
+     COVER
+════════════════════════════════════════════════════ -->
+<div class="cover">
+  <h1>ERP AI Agent</h1>
+  <div class="subtitle" style="font-size:18px; font-weight:600; color:#0f3460;">Database Architecture — Complete Reference</div>
+  <div class="subtitle">Technical Defense Document &mdash; JBM Consulting ERP System</div>
+  <br>
+  <span class="badge">PostgreSQL 16</span>
+  <span class="badge">SQLAlchemy 2.0 ORM</span>
+  <span class="badge">Star Schema (OLAP)</span>
+  <span class="badge">ETL Pipeline</span>
+  <span class="badge">ChromaDB (Vector)</span>
+  <span class="badge">RAG</span>
+  <div class="date">Ben Messaoud Jihed &nbsp;·&nbsp; 2026</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 1 — OVERVIEW
+════════════════════════════════════════════════════ -->
+<h2><span class="sec-num">1</span> Big Picture — Three Storage Layers</h2>
+
+<p>The system uses <strong>three distinct storage layers</strong>, each with a different purpose:</p>
+
+<div class="cols">
+  <div class="col-box">
+    <h4>PostgreSQL — OLTP (Operational)</h4>
+    <p>The live, transactional database. Every user action (creating a deal, sending an invoice) writes here in real time. Tables are normalised to avoid redundancy.</p>
+    <p><strong>Engine:</strong> PostgreSQL 16 &nbsp;|&nbsp; <strong>ORM:</strong> SQLAlchemy 2.0</p>
+  </div>
+  <div class="col-box">
+    <h4>PostgreSQL — OLAP (Warehouse)</h4>
+    <p>A separate schema inside the same PostgreSQL instance, shaped as a <strong>star schema</strong>. Used for analytics and AI context. Populated by the ETL pipeline — never written by the app directly.</p>
+  </div>
+</div>
+<div class="col-box" style="margin:6px 0;">
+  <h4>ChromaDB — Vector Store (RAG)</h4>
+  <p>Stores text embeddings (768-dimensional vectors) of warehouse documents. The AI uses cosine similarity search here to find relevant context before answering questions. Persisted to <code>./chroma_db/</code> on disk.</p>
+</div>
+
+<div class="diagram">
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                      PostgreSQL 16                              │
+  │                                                                 │
+  │   ┌──────────────────────┐    ┌──────────────────────────────┐  │
+  │   │  OLTP (Operational)  │    │  OLAP (Data Warehouse)       │  │
+  │   │  crm_models.py       │    │  warehouse_models.py         │  │
+  │   │  invoice_models.py   │ ──► │  Star Schema (dim + fact)    │  │
+  │   │                      │ETL │                              │  │
+  │   └──────────────────────┘    └──────────────────────────────┘  │
+  └─────────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  ChromaDB (local file-based)   ./chroma_db/                      │
+  │  Embeddings from warehouse text  →  cosine similarity search     │
+  └──────────────────────────────────────────────────────────────────┘
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 2 — SQLALCHEMY
+════════════════════════════════════════════════════ -->
+<h2><span class="sec-num">2</span> SQLAlchemy — How the ORM Works</h2>
+
+<p><strong>SQLAlchemy</strong> is a Python ORM (Object-Relational Mapper). Instead of writing raw SQL, we define Python classes that map to database tables. SQLAlchemy generates and executes the SQL automatically.</p>
+
+<h3>2.1 The Three Core Objects</h3>
+
+<table>
+  <tr><th>Object</th><th>What it is</th><th>Where it lives</th></tr>
+  <tr><td><code>engine</code></td><td>The connection pool to PostgreSQL. Reads the <code>DATABASE_URL</code> from the environment and manages the underlying <code>psycopg2</code> connections.</td><td><code>database.py</code></td></tr>
+  <tr><td><code>Base</code></td><td>The declarative base. All model classes inherit from it. Calling <code>Base.metadata.create_all()</code> at startup creates every table that doesn't yet exist.</td><td><code>database.py</code></td></tr>
+  <tr><td><code>SessionLocal</code></td><td>A session factory. Each session is a unit-of-work: it tracks changes and flushes them to the DB in a transaction.</td><td><code>database.py</code></td></tr>
+</table>
+
+<h3>2.2 Session Lifecycle — Two Patterns</h3>
+
+<div class="cols">
+  <div class="col-box">
+    <h4>get_session() — for Tools &amp; Scripts</h4>
+    <p>Returns a raw session. The caller must close it manually.</p>
+<pre>db = get_session()
+try:
+    result = db.query(Company).all()
+    db.commit()
+finally:
+    db.close()  <span class="cmt"># always runs</span></pre>
+    <p>Used inside every LangChain tool function.</p>
+  </div>
+  <div class="col-box">
+    <h4>get_db() — for FastAPI Routes</h4>
+    <p>A generator (uses <code>yield</code>). FastAPI's <code>Depends()</code> system calls it, gets the session, then closes it automatically after the request finishes.</p>
+<pre>@app.post("/chat")
+def chat(db = Depends(get_db)):
+    ...
+    <span class="cmt"># db closes after response</span></pre>
+  </div>
+</div>
+
+<h3>2.3 Defining a Table — Example</h3>
+<pre>
+<span class="kw">class</span> <span class="cls">Company</span>(Base):
+    __tablename__ = <span class="str">"companies"</span>
+    id       = Column(Integer, primary_key=True)
+    name     = Column(String, nullable=False, index=True)
+    industry = Column(String)
+    status   = Column(String, default=<span class="str">"prospect"</span>)  <span class="cmt"># prospect | client | inactive</span>
+
+    deals    = relationship(<span class="str">"Deal"</span>, back_populates=<span class="str">"company"</span>)
+</pre>
+
+<p>The <code>relationship()</code> call tells SQLAlchemy how to join tables. Accessing <code>company.deals</code> in Python automatically runs the correct JOIN — no SQL needed.</p>
+
+<h3>2.4 auto-create at Startup</h3>
+<p>In <code>main.py</code>, before the server starts accepting requests:</p>
+<pre>
+<span class="kw">from</span> backend.models.database <span class="kw">import</span> create_tables
+create_tables()  <span class="cmt"># runs Base.metadata.create_all() → creates any missing tables</span>
+</pre>
+<p>This is idempotent — it never drops existing tables, only creates missing ones.</p>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 3 — OPERATIONAL DB (OLTP)
+════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2><span class="sec-num">3</span> Operational Database — OLTP Tables</h2>
+
+<p>These tables handle <strong>live user data</strong>. Every chat action (add company, create invoice, log activity) reads/writes here. The schema is in <code>crm_models.py</code> and <code>invoice_models.py</code>.</p>
+
+<h3>3.1 Entity-Relationship Overview</h3>
+
+<div class="diagram">
+  users ──────────────────────────────────────────────┐
+    │                                                  │
+    └── activities.user_id                             │
+                                                       ▼
+  companies ─────────── contacts                   audit_logs
+      │                     │                      sessions
+      │                     └── activities.contact_id
+      │
+      ├── deals ──────────── invoices
+      │       │                  │
+      │       └── invoice.deal_id│── invoice_items
+      │                          │── payments
+      └── activities.company_id
+</div>
+
+<h3>3.2 CRM Tables (<code>crm_models.py</code>)</h3>
+
+<table>
+  <tr><th>Table</th><th>Purpose</th><th>Key Columns</th></tr>
+  <tr>
+    <td><strong>users</strong></td>
+    <td>Login accounts. Roles: admin, manager, agent, readonly.</td>
+    <td><code>id, username, email, password_hash, role, is_active</code></td>
+  </tr>
+  <tr>
+    <td><strong>companies</strong></td>
+    <td>The central entity — clients or prospects of JBM Consulting. Every other entity references a company.</td>
+    <td><code>id, name, industry, city, country, status, is_deleted</code><br>status: <em>prospect | client | inactive</em></td>
+  </tr>
+  <tr>
+    <td><strong>contacts</strong></td>
+    <td>Individual people inside a company (CEO, Sales Manager, etc.).</td>
+    <td><code>id, company_id (FK), first_name, last_name, email, role, is_primary</code></td>
+  </tr>
+  <tr>
+    <td><strong>deals</strong></td>
+    <td>Sales opportunities linked to a company. Tracks the sales pipeline from prospecting to close.</td>
+    <td><code>id, company_id (FK), title, value (TND), status, stage, probability</code><br>status: <em>open | won | lost | on_hold</em><br>stage: <em>prospecting → qualification → proposal → negotiation → closed</em></td>
+  </tr>
+  <tr>
+    <td><strong>activities</strong></td>
+    <td>Tasks, meetings, calls, emails logged against a company or contact.</td>
+    <td><code>id, company_id, contact_id, user_id, type, title, due_date, done</code><br>type: <em>call | meeting | email | task | note</em></td>
+  </tr>
+  <tr>
+    <td><strong>audit_logs</strong></td>
+    <td>Immutable record of every write operation. Every tool call that mutates data appends a row here.</td>
+    <td><code>id, user_id, action (CREATE/UPDATE/DELETE), entity, entity_id, payload (JSON), result, timestamp</code></td>
+  </tr>
+  <tr>
+    <td><strong>sessions</strong></td>
+    <td>Chat session state. Stores the last 20 messages plus any pending confirmation action.</td>
+    <td><code>id (UUID), user_id, messages (JSON), pending_action (JSON), rag_context</code></td>
+  </tr>
+</table>
+
+<h3>3.3 Invoicing Tables (<code>invoice_models.py</code>)</h3>
+
+<table>
+  <tr><th>Table</th><th>Purpose</th><th>Key Columns</th></tr>
+  <tr>
+    <td><strong>invoices</strong></td>
+    <td>The main invoice document. Linked to a company and optionally a deal.</td>
+    <td><code>id, invoice_number (unique), company_id (FK), deal_id (FK), status, subtotal, tax_rate (19% TVA), tax_amount, total (TND), issue_date, due_date, paid_at</code></td>
+  </tr>
+  <tr>
+    <td><strong>invoice_items</strong></td>
+    <td>Line items inside an invoice. An invoice has 1-N items.</td>
+    <td><code>id, invoice_id (FK), description, quantity, unit_price, total</code></td>
+  </tr>
+  <tr>
+    <td><strong>payments</strong></td>
+    <td>Actual payment records against an invoice (one invoice can have multiple partial payments).</td>
+    <td><code>id, invoice_id (FK), amount, method (bank_transfer | check | cash), reference, paid_at</code></td>
+  </tr>
+</table>
+
+<div class="box box-info">
+  <strong>Soft Delete Pattern:</strong> Tables like <code>companies</code>, <code>contacts</code>, <code>deals</code>, <code>invoices</code> have an <code>is_deleted</code> boolean column. Records are never physically removed — they are flagged. All queries filter <code>WHERE is_deleted = false</code>. This preserves historical data and the audit trail.
+</div>
+
+<div class="box box-info">
+  <strong>Currency:</strong> All monetary values are stored in <strong>TND (Tunisian Dinar)</strong>. Tunisia's TVA rate is <strong>19%</strong>, hardcoded as the default <code>tax_rate</code> on every invoice.
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 4 — STAR SCHEMA (WAREHOUSE / OLAP)
+════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2><span class="sec-num">4</span> Data Warehouse — Star Schema (OLAP)</h2>
+
+<h3>4.1 What is a Star Schema?</h3>
+
+<p>A star schema separates data into two types of tables:</p>
+<ul>
+  <li><strong>Dimension tables</strong> — descriptive attributes (who, what, when, where). Prefixed <code>dim_</code>.</li>
+  <li><strong>Fact tables</strong> — measurable events or transactions (how much, how many). Prefixed <code>fact_</code>.</li>
+</ul>
+<p>Fact tables sit in the centre and reference dimension tables by surrogate keys. The resulting diagram looks like a star — hence the name.</p>
+
+<h3>4.2 Star Schema Diagram</h3>
+
+<div class="diagram">
+                        ┌──────────────┐
+                        │   dim_date   │
+                        │  date_key PK │
+                        │  full_date   │
+                        │  day, month  │
+                        │  quarter,year│
+                        │  fiscal_year │
+                        └──────┬───────┘
+                               │
+         ┌──────────────┐      │      ┌──────────────┐
+         │  dim_client  │      │      │ dim_employee │
+         │ client_key PK│      │      │employee_key  │
+         │ source_id    │      │      │ source_id    │
+         │ name, industry│     │      │ full_name    │
+         │ city, status │      │      │ department   │
+         │ total_revenue│      │      │ salary       │
+         └──────┬───────┘      │      └──────┬───────┘
+                │              │             │
+                │    ┌─────────┴─────────┐   │
+                │    │    FACT TABLES    │   │
+                ├───►│   fact_revenue    │◄──┤
+                ├───►│   fact_deals      │◄──┤
+                ├───►│fact_proj_perf     │◄──┘
+                └───►│ fact_hr_events    │
+                     └───────────────────┘
+                              ▲
+                     ┌────────┴──────┐
+                     │  dim_service  │
+                     │service_key PK │
+                     │ name, category│
+                     │ billing_type  │
+                     └───────────────┘
+</div>
+
+<h3>4.3 Dimension Tables</h3>
+
+<table>
+  <tr><th>Table</th><th>Grain (one row = ?)</th><th>Key Columns</th></tr>
+  <tr>
+    <td><strong>dim_date</strong></td>
+    <td>One row per calendar day (2023-01-01 → 2026-12-31, ~1461 rows)</td>
+    <td><code>date_key</code> = integer YYYYMMDD (e.g., 20240315), <code>full_date, day, month, quarter, year, week_of_year, is_weekend, fiscal_quarter</code></td>
+  </tr>
+  <tr>
+    <td><strong>dim_client</strong></td>
+    <td>One row per company</td>
+    <td><code>client_key</code> (surrogate PK), <code>source_id</code> (= <code>companies.id</code>), <code>name, industry, city, status, total_won_deals, total_revenue</code></td>
+  </tr>
+  <tr>
+    <td><strong>dim_employee</strong></td>
+    <td>One row per employee</td>
+    <td><code>employee_key</code> (surrogate PK), <code>source_id</code> (= <code>employees.id</code>), <code>full_name, position, department, contract_type, salary, status</code></td>
+  </tr>
+  <tr>
+    <td><strong>dim_service</strong></td>
+    <td>One row per service category (15 rows, static)</td>
+    <td><code>service_key</code>, <code>name</code> (e.g., "ERP Implementation"), <code>category</code> (ERP/Cloud/Development/Consulting/Support), <code>billing_type</code> (fixed / time_and_materials / retainer)</td>
+  </tr>
+</table>
+
+<h3>4.4 Fact Tables</h3>
+
+<table>
+  <tr><th>Table</th><th>Grain</th><th>Dimensions Referenced</th><th>Key Measures</th></tr>
+  <tr>
+    <td><strong>fact_revenue</strong></td>
+    <td>One row per invoice</td>
+    <td>dim_date (issue date), dim_client</td>
+    <td><code>subtotal, tax_amount, total (TND), days_to_pay, is_paid, is_overdue</code></td>
+  </tr>
+  <tr>
+    <td><strong>fact_deals</strong></td>
+    <td>One row per deal</td>
+    <td>dim_date (created + closed), dim_client</td>
+    <td><code>value (TND), is_won, is_lost, sales_cycle_days, probability</code></td>
+  </tr>
+  <tr>
+    <td><strong>fact_project_performance</strong></td>
+    <td>One row per project (snapshot)</td>
+    <td>dim_date (start), dim_client, dim_employee (manager)</td>
+    <td><code>budget, spent, budget_used_pct, total_tasks, done_tasks, completion_pct, total_hours, is_over_budget, is_overdue</code></td>
+  </tr>
+  <tr>
+    <td><strong>fact_hr_events</strong></td>
+    <td>One row per payroll record or leave request</td>
+    <td>dim_date (period), dim_employee</td>
+    <td>Payroll: <code>base_salary, bonuses, deductions, net_salary</code> &nbsp;|&nbsp; Leave: <code>leave_type, leave_days, leave_status</code></td>
+  </tr>
+</table>
+
+<h3>4.5 Surrogate Keys vs Natural Keys</h3>
+
+<div class="box">
+  <strong>Why two key columns in dimension tables?</strong><br><br>
+  Each dimension has two identifiers:
+  <ul>
+    <li><code>client_key</code> — <strong>surrogate key</strong>: auto-generated integer, used for all joins inside the warehouse. Stable even if source data changes.</li>
+    <li><code>source_id</code> — <strong>natural key</strong>: the original <code>companies.id</code> from the operational DB. Used by the ETL to look up which warehouse row to update.</li>
+  </ul>
+  This pattern (surrogate + source) is standard data warehouse practice. The warehouse is isolated from operational ID changes.
+</div>
+
+<h3>4.6 Date Key Design</h3>
+
+<p>Instead of storing a <code>DATE</code> foreign key, the system uses an <strong>integer date key</strong> in the format <code>YYYYMMDD</code>:</p>
+<pre>
+<span class="kw">def</span> _date_key(d: date) -> int:
+    <span class="kw">return</span> d.year * <span class="num">10000</span> + d.month * <span class="num">100</span> + d.day
+<span class="cmt"># Example: 2024-03-15 → 20240315</span>
+</pre>
+<p>This integer joins to <code>dim_date.date_key</code>. Benefits: fast integer join, human-readable, sortable without date parsing.</p>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 5 — ETL PIPELINE
+════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2><span class="sec-num">5</span> ETL Pipeline — From Operational Data to Warehouse</h2>
+
+<p><strong>ETL</strong> = Extract, Transform, Load. The pipeline reads live operational data, cleans/restructures it, and loads it into the warehouse tables.</p>
+
+<h3>5.1 The Two ETL Processes</h3>
+
+<div class="cols">
+  <div class="col-box">
+    <h4>ETL 1 — CSV → Staging (<code>etl_pipeline.py</code> data ingestion part)</h4>
+    <p>External data (e.g., <code>data/staging/clean_invoices.csv</code>) is ingested into operational tables. Used during initial setup and for bulk imports from legacy systems.</p>
+    <p><strong>Flow:</strong> CSV file → pandas read → validate/clean → INSERT into operational tables</p>
+  </div>
+  <div class="col-box">
+    <h4>ETL 2 — Operational DB → Warehouse (<code>etl_pipeline.py</code> main ETL)</h4>
+    <p>The main analytical ETL. Reads from live operational tables, computes derived metrics, and loads into the star schema. Run on-demand or via the Airflow DAG.</p>
+    <p><strong>Flow:</strong> OLTP tables → transform → UPSERT/TRUNCATE-RELOAD into warehouse</p>
+  </div>
+</div>
+
+<h3>5.2 ETL Execution Order — Dependency Chain</h3>
+
+<p>Dimensions must be loaded <strong>before</strong> facts because facts reference dimension surrogate keys:</p>
+
+<div class="flow">
+  <span class="step">1. dim_date</span>
+  <span class="arrow">→</span>
+  <span class="step">2. dim_client</span>
+  <span class="arrow">→</span>
+  <span class="step">3. dim_employee</span>
+  <span class="arrow">→</span>
+  <span class="step">4. dim_service</span>
+  <span class="arrow">→</span>
+  <span class="step">5. fact_revenue</span>
+  <span class="arrow">→</span>
+  <span class="step">6. fact_deals</span>
+  <span class="arrow">→</span>
+  <span class="step">7. fact_proj_perf</span>
+  <span class="arrow">→</span>
+  <span class="step">8. fact_hr_events</span>
+</div>
+
+<p>If step 5 runs before step 2, the <code>client_key</code> lookup would fail — the warehouse rows don't exist yet.</p>
+
+<h3>5.3 Load Strategies</h3>
+
+<table>
+  <tr><th>Strategy</th><th>Used For</th><th>How it Works</th><th>Why</th></tr>
+  <tr>
+    <td><strong>Upsert</strong></td>
+    <td>Dimension tables (<code>dim_client</code>, <code>dim_employee</code>)</td>
+    <td>Query by <code>source_id</code>. If row exists → UPDATE. If not → INSERT.</td>
+    <td>Dimensions are slowly changing. We want to update names/status without losing history.</td>
+  </tr>
+  <tr>
+    <td><strong>Truncate &amp; Reload</strong></td>
+    <td>Fact tables (<code>fact_revenue</code>, <code>fact_deals</code>, etc.)</td>
+    <td><code>DELETE FROM fact_x;</code> then INSERT all rows fresh.</td>
+    <td>Facts are fully derived from operational data. Simpler to rebuild than partial-update. Always consistent.</td>
+  </tr>
+  <tr>
+    <td><strong>Insert-if-missing</strong></td>
+    <td><code>dim_date</code>, <code>dim_service</code></td>
+    <td>Load existing keys into a Python set. Only insert rows not in that set.</td>
+    <td>These tables rarely change. Avoid duplicates without a full DELETE.</td>
+  </tr>
+</table>
+
+<h3>5.4 Key Transform Logic</h3>
+
+<table>
+  <tr><th>Transform</th><th>Where</th><th>Example</th></tr>
+  <tr>
+    <td>Date → date_key integer</td>
+    <td><code>_date_key()</code></td>
+    <td><code>2024-03-15 → 20240315</code></td>
+  </tr>
+  <tr>
+    <td>Quarter calculation</td>
+    <td><code>_quarter(month)</code></td>
+    <td><code>(month - 1) // 3 + 1</code> → March = Q1</td>
+  </tr>
+  <tr>
+    <td>Days to pay</td>
+    <td><code>etl_fact_revenue()</code></td>
+    <td><code>(paid_at - issue_date).days</code> — NULL if not paid</td>
+  </tr>
+  <tr>
+    <td>Sales cycle</td>
+    <td><code>etl_fact_deals()</code></td>
+    <td><code>(closed_at - created_at).days</code> — NULL if deal still open</td>
+  </tr>
+  <tr>
+    <td>Budget burn %</td>
+    <td><code>etl_fact_projects()</code></td>
+    <td><code>spent / budget * 100</code></td>
+  </tr>
+  <tr>
+    <td>Stage normalisation</td>
+    <td><code>STAGE_MAP</code> dict</td>
+    <td>French "gagné" / English "closed-won" → unified "closed"</td>
+  </tr>
+  <tr>
+    <td>Computed client totals</td>
+    <td><code>etl_dim_clients()</code></td>
+    <td>Queries live DB for <code>SUM(invoice.total)</code> and <code>COUNT(won deals)</code> per company, stores result in <code>dim_client.total_revenue</code></td>
+  </tr>
+</table>
+
+<h3>5.5 Error Handling &amp; Transaction Safety</h3>
+<pre>
+db = get_session()
+<span class="kw">try</span>:
+    etl_dim_date(db)
+    etl_dim_clients(db)
+    etl_fact_revenue(db)
+    ...
+    db.commit()        <span class="cmt"># atomic: all steps succeed or nothing commits</span>
+<span class="kw">except</span> Exception <span class="kw">as</span> e:
+    db.rollback()      <span class="cmt"># undo everything if any step fails</span>
+    <span class="kw">raise</span>
+<span class="kw">finally</span>:
+    db.close()         <span class="cmt"># connection always returned to pool</span>
+</pre>
+
+<p>All ETL steps run inside a single transaction. If <code>fact_revenue</code> fails after <code>dim_client</code> succeeded, the rollback undoes everything — the warehouse stays consistent.</p>
+
+<h3>5.6 Running the ETL</h3>
+<div class="cols">
+  <div class="col-box">
+    <h4>Standalone (development)</h4>
+    <pre>python -m backend.etl.run_etl</pre>
+  </div>
+  <div class="col-box">
+    <h4>Via Airflow DAG (production)</h4>
+    <p>DAG ID: <code>jbm_etl_pipeline</code><br>Starts Airflow: <code>start_airflow.bat</code><br>UI: <code>http://localhost:8080</code></p>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 6 — CHROMADB / RAG
+════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2><span class="sec-num">6</span> ChromaDB — Vector Store &amp; RAG</h2>
+
+<h3>6.1 What is RAG?</h3>
+
+<p><strong>RAG (Retrieval-Augmented Generation)</strong> is a technique where the AI, before generating a response, first searches a knowledge base for relevant documents and includes them in its prompt as context. This lets the AI answer questions about specific company data without hallucinating.</p>
+
+<div class="diagram">
+  User query: "What deals do we have with Tunisie Telecom?"
+       │
+       ▼
+  [1] ERPRetriever.retrieve("Tunisie Telecom deals")
+       │  → embed query using nomic-embed-text (768-dim vector)
+       │  → cosine similarity search in ChromaDB jbm_crm collection
+       │  → returns top-5 most relevant document chunks
+       ▼
+  [2] Context injected into agent prompt:
+      "[Context 1 - crm (relevance: 0.91)]: Deal: ERP migration, value 45,000 TND..."
+       │
+       ▼
+  [3] LLM (qwen2.5:7b) answers using both the context AND tool calls
+</div>
+
+<h3>6.2 Embedding Setup</h3>
+
+<table>
+  <tr><th>Component</th><th>Value</th></tr>
+  <tr><td>Embedding model</td><td><code>nomic-embed-text</code> via Ollama (runs locally)</td></tr>
+  <tr><td>Vector dimensions</td><td>768</td></tr>
+  <tr><td>Distance metric</td><td>Cosine similarity (<code>hnsw:space = cosine</code>)</td></tr>
+  <tr><td>Storage</td><td>Local file: <code>./chroma_db/</code></td></tr>
+  <tr><td>Collections</td><td><code>jbm_crm</code> (companies, deals, activities) &nbsp;|&nbsp; <code>jbm_invoicing</code> (invoices)</td></tr>
+</table>
+
+<h3>6.3 What Gets Embedded?</h3>
+
+<div class="box box-warn">
+  <strong>Rule:</strong> Only warehouse tables (<code>dim_*</code> and <code>fact_*</code>) are embedded — never operational tables. This means RAG context is always derived from the clean, validated analytical snapshot, not raw live data.
+</div>
+
+<p>The <strong>embedding pipeline</strong> (<code>backend/rag/embedding_pipeline.py</code>) reads from warehouse tables and converts records into human-readable text documents before embedding. Example:</p>
+<pre>
+<span class="cmt"># A dim_client row becomes a text document:</span>
+<span class="str">"Company: Tunisie Telecom | Industry: Telecom | City: Tunis
+ Status: client | Total Revenue: 142,500 TND | Won Deals: 3"</span>
+</pre>
+
+<h3>6.4 Retrieval Process (<code>ERPRetriever</code>)</h3>
+<pre>
+retriever = ERPRetriever(module=<span class="str">"crm"</span>, top_k=<span class="num">5</span>)
+docs = retriever.retrieve(<span class="str">"contract renewal Tunisie Telecom"</span>)
+context = retriever.format_context(docs)
+<span class="cmt"># context is a formatted string injected into the agent's system prompt</span>
+</pre>
+
+<p>Steps internally:</p>
+<ol>
+  <li>Convert query to a 768-dim embedding vector</li>
+  <li>ChromaDB finds the <code>n_results</code> closest vectors by cosine distance</li>
+  <li>Results are sorted by similarity score (1 − distance)</li>
+  <li>Top-5 documents are returned as <code>langchain.Document</code> objects</li>
+</ol>
+
+<h3>6.5 Setting Up RAG</h3>
+<pre>
+python -m backend.rag.setup_rag
+<span class="cmt"># 1. Checks Ollama + nomic-embed-text is running</span>
+<span class="cmt"># 2. Runs full embedding pipeline (reads warehouse → embeds → writes to chroma_db)</span>
+<span class="cmt"># 3. Runs test query to confirm retrieval works</span>
+</pre>
+
+<div class="box box-info">
+  <strong>Important:</strong> The ETL must be run <em>before</em> RAG setup. The embedding pipeline reads warehouse tables — if they're empty, ChromaDB collections will be empty too, and the AI will have no context to draw from.
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 7 — AUDIT LOG
+════════════════════════════════════════════════════ -->
+<h2><span class="sec-num">7</span> Audit Log — Every Write is Tracked</h2>
+
+<p>Every tool function that mutates data must call <code>log_action()</code> from <code>backend/utils/audit.py</code> after the mutation succeeds. This writes a row to the <code>audit_logs</code> table.</p>
+
+<pre>
+<span class="kw">from</span> backend.utils.audit <span class="kw">import</span> log_action
+
+<span class="cmt"># Inside a confirmed write tool:</span>
+db.add(new_company)
+db.commit()
+log_action(db, action=<span class="str">"CREATE"</span>, entity=<span class="str">"company"</span>, entity_id=new_company.id,
+           payload={<span class="str">"name"</span>: name, <span class="str">"industry"</span>: industry},
+           result=<span class="str">"success"</span>)
+</pre>
+
+<table>
+  <tr><th>Column</th><th>Content</th></tr>
+  <tr><td><code>action</code></td><td>CREATE, UPDATE, DELETE, READ</td></tr>
+  <tr><td><code>entity</code></td><td>Table name: company, deal, invoice, payment …</td></tr>
+  <tr><td><code>entity_id</code></td><td>The primary key of the affected row</td></tr>
+  <tr><td><code>payload</code></td><td>JSON of the input that was sent to the tool</td></tr>
+  <tr><td><code>result</code></td><td>"success" or "error"</td></tr>
+  <tr><td><code>timestamp</code></td><td>UTC timestamp, auto-set</td></tr>
+</table>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 8 — TWO-PHASE WRITE PATTERN
+════════════════════════════════════════════════════ -->
+<h2><span class="sec-num">8</span> Two-Phase Write Pattern</h2>
+
+<p>All mutating tools follow a two-step confirmation flow to prevent accidental writes:</p>
+
+<div class="flow">
+  <span class="step">User request</span>
+  <span class="arrow">→</span>
+  <span class="step">Tool called (confirmed=False)</span>
+  <span class="arrow">→</span>
+  <span class="step">Preview shown to user</span>
+  <span class="arrow">→</span>
+  <span class="step">User confirms</span>
+  <span class="arrow">→</span>
+  <span class="step">Tool called (confirmed=True)</span>
+  <span class="arrow">→</span>
+  <span class="step">DB write + AuditLog</span>
+</div>
+
+<pre>
+<span class="kw">@tool</span>
+<span class="kw">def</span> <span class="cls">create_company</span>(name: str, industry: str, confirmed: bool = False) -> str:
+    <span class="kw">if not</span> confirmed:
+        <span class="kw">return</span> <span class="str">f"Preview: create company '{name}' in {industry}. Reply 'yes' to confirm."</span>
+
+    db = get_session()
+    <span class="kw">try</span>:
+        company = Company(name=name, industry=industry)
+        db.add(company)
+        db.commit()
+        log_action(db, <span class="str">"CREATE"</span>, <span class="str">"company"</span>, company.id, {...}, <span class="str">"success"</span>)
+        <span class="kw">return</span> <span class="str">f"Company '{name}' created (ID {company.id})."</span>
+    <span class="kw">finally</span>:
+        db.close()
+</pre>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 9 — FULL REQUEST FLOW
+════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2><span class="sec-num">9</span> Full Request Flow — How It All Connects</h2>
+
+<div class="diagram">
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │                      POST /chat  (FastAPI)                           │
+  └─────────────────────────────┬────────────────────────────────────────┘
+                                │  1. Load session from PostgreSQL (sessions table)
+                                ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                        Supervisor Agent                              │
+  │  Tier 1: keyword match  (e.g. "invoice" → INVOICING)                │
+  │  Tier 2: LLM router via qwen2.5:7b  (when Tier 1 returns None)      │
+  └─────────────────────────────┬───────────────────────────────────────┘
+                                │  2. Route to specialist
+           ┌────────────────────┼────────────────────────┐
+           ▼                    ▼                         ▼
+     CRM Agent           Invoice Agent             Chart Agent
+           │                    │                         │
+           │  3. RAG injection  │                         │
+           │  ERPRetriever      │                         │
+           │  → ChromaDB query  │                         │
+           │  → top-5 docs      │                         │
+           ▼                    ▼                         ▼
+     LangChain AgentExecutor (create_tool_calling_agent)
+           │
+           │  4. LLM decides which tool to call
+           ▼
+     @tool functions  (crm_tools.py / invoice_tools.py / chart_tools.py)
+           │
+           │  5. Read: query PostgreSQL OLTP tables
+           │     Write: two-phase → write to OLTP + AuditLog
+           ▼
+     PostgreSQL (operational tables)
+           │
+           │  6. Save updated session (messages, rag_context)
+           ▼
+     sessions table  →  Response to user
+</div>
+
+<h3>9.1 Startup Sequence</h3>
+
+<div class="flow">
+  <span class="step">PostgreSQL starts (axis-db)</span>
+  <span class="arrow">→</span>
+  <span class="step">ChromaDB + Ollama start</span>
+  <span class="arrow">→</span>
+  <span class="step">Backend starts</span>
+  <span class="arrow">→</span>
+  <span class="step">create_tables() runs</span>
+  <span class="arrow">→</span>
+  <span class="step">Frontend starts (nginx)</span>
+</div>
+
+<p>Docker Compose enforces this via <code>depends_on</code> + <code>healthcheck</code> conditions.</p>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 10 — SUMMARY TABLE
+════════════════════════════════════════════════════ -->
+<h2><span class="sec-num">10</span> Quick Reference Summary</h2>
+
+<table>
+  <tr><th>What</th><th>Technology</th><th>File</th><th>Purpose</th></tr>
+  <tr><td>DB connection</td><td>SQLAlchemy engine + psycopg2</td><td><code>models/database.py</code></td><td>Connect to PostgreSQL</td></tr>
+  <tr><td>Table definitions (OLTP)</td><td>SQLAlchemy ORM classes</td><td><code>models/crm_models.py</code><br><code>models/invoice_models.py</code></td><td>Live operational data</td></tr>
+  <tr><td>Table definitions (OLAP)</td><td>SQLAlchemy ORM classes</td><td><code>models/warehouse_models.py</code></td><td>Star schema for analytics</td></tr>
+  <tr><td>ETL pipeline</td><td>Pure Python + SQLAlchemy queries</td><td><code>etl/etl_pipeline.py</code></td><td>OLTP → OLAP transform</td></tr>
+  <tr><td>Vector store</td><td>ChromaDB PersistentClient</td><td><code>rag/retriever.py</code></td><td>Semantic document search</td></tr>
+  <tr><td>Embeddings</td><td>Ollama nomic-embed-text</td><td><code>rag/embedding_pipeline.py</code></td><td>768-dim text→vector</td></tr>
+  <tr><td>Audit trail</td><td>AuditLog table + log_action()</td><td><code>utils/audit.py</code></td><td>Every write is recorded</td></tr>
+  <tr><td>Session storage</td><td>sessions table (JSON column)</td><td><code>models/crm_models.py</code></td><td>Chat history per user</td></tr>
+</table>
+
+<br>
+<div class="box box-ok" style="text-align:center; padding: 16px;">
+  <strong>Defence Tip:</strong> If asked "why star schema instead of OLTP for analytics?"<br><br>
+  OLTP tables are normalised (many joins needed). The star schema pre-computes joins and derived metrics (sales cycle, budget burn %, etc.) into flat fact tables. BI tools and the AI can query them with simple aggregations — no complex multi-table JOINs, much faster.
+</div>
+
+<br><br>
+<div style="text-align:center; font-size:11px; color:#888; border-top:1px solid #ddd; padding-top:10px;">
+  ERP AI Agent — Database Architecture &nbsp;·&nbsp; Ben Messaoud Jihed &nbsp;·&nbsp; 2026 &nbsp;·&nbsp; For internal defence use only
+</div>
+
+</body>
+</html>

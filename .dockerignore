@@ -1,0 +1,42 @@
+# Python
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Git & IDE
+.git/
+.gitignore
+.claude/
+
+# Secrets — injected at runtime via env_file, never baked into the image
+.env
+
+# Runtime artefacts that must not end up in the image
+logs/
+chroma_db/
+*.log
+
+# Heavy static sub-trees not needed inside the backend image
+static/node_modules/
+static/package.json
+static/package-lock.json
+
+# Large SQL dumps
+*.sql
+
+# Misc project files not needed in any container
+airflow/logs/
+{backend/
+_*.txt
+*.md
+README*
+CLAUDE*
+streamlit
+tasks/
+dashboards/
+data/
+alembic/versions/*.pyc

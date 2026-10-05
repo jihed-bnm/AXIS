@@ -16,9 +16,6 @@ Functions:
     etl_fact_hr_events()    — load payroll + leave -> fact_hr_events
 """
 
-# DEPRECATED — not used in current data flow
-# Active ETL: airflow/dags/etl_jbm_pipeline.py
-
 from datetime import date, datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -531,9 +528,6 @@ def run_full_etl() -> dict:
         results["dim_clients"]   = etl_dim_clients(db)
         logger.info(f"[ETL] dim_client: {results['dim_clients']} rows upserted")
 
-        results["dim_employees"] = etl_dim_employees(db)
-        logger.info(f"[ETL] dim_employee: {results['dim_employees']} rows upserted")
-
         results["dim_services"]  = etl_dim_services(db)
         logger.info(f"[ETL] dim_service: {results['dim_services']} rows inserted")
 
@@ -542,12 +536,6 @@ def run_full_etl() -> dict:
 
         results["fact_deals"]    = etl_fact_deals(db)
         logger.info(f"[ETL] fact_deals: {results['fact_deals']} rows loaded")
-
-        results["fact_projects"] = etl_fact_projects(db)
-        logger.info(f"[ETL] fact_project_performance: {results['fact_projects']} rows loaded")
-
-        results["fact_hr_events"] = etl_fact_hr_events(db)
-        logger.info(f"[ETL] fact_hr_events: {results['fact_hr_events']} rows loaded")
 
         db.commit()
         logger.info("[ETL] Pipeline completed successfully.")
@@ -563,7 +551,32 @@ def run_full_etl() -> dict:
 
 
 if __name__ == "__main__":
-    stats = run_full_etl()
-    print("\nETL Summary:")
-    for step, count in stats.items():
-        print(f"  {step:<25}: {count} rows")
+    import sys as _sys
+
+    Base.metadata.create_all(bind=engine)
+    db = get_session()
+
+    steps = [
+        ("dim_date      -> warehouse date dimension",    lambda: etl_dim_date(db)),
+        ("dim_clients   -> warehouse.dim_client",        lambda: etl_dim_clients(db)),
+        ("dim_services  -> warehouse.dim_service",       lambda: etl_dim_services(db)),
+        ("fact_revenue  -> warehouse.fact_revenue",      lambda: etl_fact_revenue(db)),
+        ("fact_deals    -> warehouse.fact_deals",        lambda: etl_fact_deals(db)),
+    ]
+    total = len(steps)
+    results = {}
+
+    try:
+        for i, (label, fn) in enumerate(steps, 1):
+            print(f"{i}/{total} {label}", flush=True)
+            results[label] = fn()
+        db.commit()
+        print(f"\nETL sync complete.")
+        for label, count in results.items():
+            print(f"  {label}: {count} rows")
+    except Exception as exc:
+        db.rollback()
+        print(f"ETL failed: {exc}", file=_sys.stderr)
+        _sys.exit(1)
+    finally:
+        db.close()

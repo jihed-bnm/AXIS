@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 import json
+import psutil
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
@@ -69,6 +70,10 @@ def _init_charts_table() -> None:
                     created_at  TIMESTAMP DEFAULT NOW(),
                     session_id  TEXT
                 )
+            """))
+            conn.execute(text("""
+                ALTER TABLE public.axis_charts
+                ADD COLUMN IF NOT EXISTS period TEXT DEFAULT 'all'
             """))
             conn.commit()
     except Exception as exc:
@@ -285,7 +290,7 @@ def delete_user(user_id: int, admin: dict = Depends(require_admin)):
 
 # ── ETL state ─────────────────────────────────────────────────────────────────
 
-_etl: dict = {"status": "idle", "last_run": None}
+_etl: dict = {"status": "idle", "last_run": None, "step": 0, "total": 5, "step_name": "", "pid": None}
 
 # ── Serve frontend ────────────────────────────────────────────────────────────
 
@@ -442,24 +447,26 @@ def crm_win_rate(year: Optional[int] = None, month: Optional[int] = None, user: 
         raise HTTPException(500, str(exc))
 
 
-@router.get("/api/crm/pipeline-stage")
-def crm_pipeline_stage(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
+@router.get("/api/crm/pipeline-value")
+def crm_pipeline_value(year: Optional[int] = None, month: Optional[int] = None, user: dict = Depends(get_current_user)):
     try:
         params: dict = {}
-        dfd = _date_filter("created_at", year, month, params)
-        return _query(f"""
+        dfd = _date_filter("created_date", year, month, params)
+        rows = _query(f"""
             SELECT
-                CASE
-                    WHEN LOWER(status) IN ('won', 'lost') OR LOWER(stage) = 'closed'
-                    THEN 'Closed'
-                    ELSE INITCAP(LOWER(stage))
-                END AS stage,
+                INITCAP(LOWER(stage)) AS stage,
+                COALESCE(SUM(value_tnd), 0) AS total_value,
                 COUNT(*) AS deal_count
-            FROM deals
-            WHERE is_deleted = FALSE
+            FROM warehouse.fact_deals
+            WHERE LOWER(status) = 'open'
               AND stage IS NOT NULL{dfd}
-            GROUP BY 1 ORDER BY deal_count DESC
+            GROUP BY 1
+            ORDER BY total_value DESC
         """, params)
+        for r in rows:
+            r["total_value"] = float(r["total_value"])
+            r["deal_count"]  = int(r["deal_count"])
+        return rows
     except Exception as exc:
         raise HTTPException(500, str(exc))
 
@@ -542,7 +549,7 @@ def finance_kpis(year: Optional[int] = None, month: Optional[int] = None, user: 
         r = _one(f"""
             SELECT
                 COALESCE(SUM(CASE WHEN LOWER(status)='paid'                       THEN total_amount END),0) AS collected,
-                COALESCE(SUM(CASE WHEN LOWER(status)='draft'                      THEN total_amount END),0) AS pending,
+                COALESCE(SUM(CASE WHEN LOWER(status)='pending'                    THEN total_amount END),0) AS pending,
                 COALESCE(SUM(CASE WHEN LOWER(status)='overdue' OR is_overdue=true THEN total_amount END),0) AS overdue,
                 COALESCE(SUM(CASE WHEN LOWER(status)!='cancelled'                 THEN total_amount END),0) AS total_billed
             FROM warehouse.fact_revenue
@@ -570,7 +577,7 @@ def finance_revenue_year(year: Optional[int] = None, month: Optional[int] = None
         rows = _query(f"""
             SELECT EXTRACT(year FROM invoice_date)::int AS year,
                    COALESCE(SUM(CASE WHEN LOWER(status)='paid'                       THEN total_amount END),0) AS collected,
-                   COALESCE(SUM(CASE WHEN LOWER(status)='draft'                      THEN total_amount END),0) AS pending,
+                   COALESCE(SUM(CASE WHEN LOWER(status)='pending'                    THEN total_amount END),0) AS pending,
                    COALESCE(SUM(CASE WHEN LOWER(status)='overdue' OR is_overdue=true THEN total_amount END),0) AS overdue
             FROM warehouse.fact_revenue
             WHERE invoice_date IS NOT NULL AND invoice_date <= CURRENT_DATE{dfr}
@@ -686,7 +693,7 @@ def finance_monthly(year: Optional[int] = None, month: Optional[int] = None, use
                    EXTRACT(month FROM invoice_date)::int AS month,
                    COUNT(*) FILTER (WHERE LOWER(status) != 'cancelled') AS issued,
                    COUNT(*) FILTER (WHERE LOWER(status) = 'paid') AS paid,
-                   COUNT(*) FILTER (WHERE LOWER(status) = 'overdue' OR is_overdue = true) AS overdue
+                   COUNT(*) FILTER (WHERE LOWER(status) = 'overdue' OR (is_overdue = true AND LOWER(status) NOT IN ('paid','pending','cancelled'))) AS overdue
             FROM warehouse.fact_revenue
             WHERE invoice_date IS NOT NULL AND invoice_date <= CURRENT_DATE{dfr}
             GROUP BY 1, 2 ORDER BY 1, 2
@@ -736,7 +743,8 @@ def activity_feed(user: dict = Depends(get_current_user)):
 def list_charts(user: dict = Depends(get_current_user)):
     try:
         rows = _query("""
-            SELECT chart_id, title, chart_type, config, created_at, session_id
+            SELECT chart_id, title, chart_type, config, created_at, session_id,
+                   COALESCE(period, 'all') AS period
             FROM public.axis_charts
             ORDER BY created_at DESC
         """)
@@ -784,27 +792,55 @@ def etl_trigger(user: dict = Depends(require_admin)):
         return {"status": "already_running"}
 
     _etl["status"] = "running"
+    _etl["step"] = 0
+    _etl["total"] = 5
+    _etl["step_name"] = ""
+    _etl["pid"] = None
     _log("etl", "system", "ETL pipeline triggered via AXIS", username=user.get("username"))
 
     root = Path(__file__).resolve().parent.parent.parent
 
     def _run() -> None:
         global _etl
+        import re as _re
+        _step_re = _re.compile(r'(\d+)/(\d+)\s+(.*\S)')
         try:
-            res = subprocess.run(
-                [sys.executable, "-m", "backend.etl.run_etl"],
+            proc = subprocess.Popen(
+                [sys.executable, "-m", "backend.etl.etl_pipeline"],
                 cwd=str(root),
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                timeout=600,
+                encoding="utf-8",
+                env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"},
             )
-            if res.returncode == 0:
+            _etl["pid"] = proc.pid
+            stderr_buf: list = []
+
+            def _drain():
+                for ln in proc.stderr:
+                    stderr_buf.append(ln)
+
+            threading.Thread(target=_drain, daemon=True).start()
+            for line in proc.stdout:
+                if _etl["step"] == 0:
+                    _log("etl", "system", f"ETL stdout: {line.rstrip()}")
+                m = _step_re.search(line)
+                if m:
+                    _etl["step"] = int(m.group(1))
+                    _etl["total"] = int(m.group(2))
+                    _etl["step_name"] = m.group(3).strip()
+            proc.wait()
+            _etl["pid"] = None
+            if proc.returncode == 0:
+                _etl["step"] = _etl["total"]
                 _etl["status"] = "success"
                 _log("etl", "system", "ETL pipeline completed successfully")
             else:
                 _etl["status"] = "failed"
-                _log("etl", "system", f"ETL failed: {res.stderr[:200]}", "error")
+                _log("etl", "system", f"ETL failed: {''.join(stderr_buf)[:200]}", "error")
         except Exception as exc:
+            _etl["pid"] = None
             _etl["status"] = "failed"
             _log("etl", "system", f"ETL error: {exc}", "error")
         _etl["last_run"] = datetime.utcnow().isoformat()
@@ -816,6 +852,25 @@ def etl_trigger(user: dict = Depends(require_admin)):
 @router.get("/api/etl/status")
 def etl_status(user: dict = Depends(get_current_user)):
     return _etl
+
+
+@router.post("/api/etl/cancel")
+def etl_cancel(user: dict = Depends(require_admin)):
+    global _etl
+    pid = _etl.get("pid")
+    if _etl["status"] != "running" or not pid:
+        return {"status": "not_running"}
+    try:
+        p = psutil.Process(pid)
+        p.kill()
+        _etl["status"] = "failed"
+        _etl["step_name"] = "Cancelled"
+        _etl["pid"] = None
+        _etl["last_run"] = datetime.utcnow().isoformat()
+        _log("etl", "system", "ETL cancelled by admin", "warning")
+        return {"status": "cancelled"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 
 # ── Evaluation table bootstrap ────────────────────────────────────────────────
