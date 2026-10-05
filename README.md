@@ -155,5 +155,5 @@ static/       web UI and guided tour
 
 ## Author
 
-**Jihed**, Business Computing (Business Intelligence), ISG Tunis.
-Built at EITA Innov, Tunisia.
+**Jihed**, software engineering student.
+AXIS was built as my end-of-studies project (PFE) for my Business Computing (Business Intelligence) degree at ISG Tunis, during a four-month internship at EITA Innov, Tunisia.
